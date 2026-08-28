@@ -31,3 +31,15 @@ PWA pensée pour iPhone / GitHub Pages.
 - la galerie V1 utilise un stockage local simple et limité : passage à IndexedDB prévu pour une grosse photothèque.
 - albums, recaps vidéo, musique, Photo Diary, IA Match et AI Pick sont volontairement gardés pour les versions suivantes.
 - pour un verrouillage réellement sécurisé, utiliser une vérification côté serveur : une PWA 100% statique ne peut pas protéger un secret contre quelqu'un qui inspecte le code.
+
+
+## V2 corrections
+- selfie preview mirrored naturally; saved photo no longer intentionally flipped
+- new camera switch icon
+- Overlay replaces the unclear Trace label, with Remove control
+- visible shutter flash feedback
+- Vintage filter with grain/fade/vignette
+- richer iPhone-style filter editor: exposure, brilliance, highlights, shadows, contrast, brightness, black point, saturation, vibrance, warmth, tint, sharpness, definition, noise reduction, vignette, grain, fade
+- gallery viewer, deletion, favorites section, albums
+- A/B comparison: select two photos, A is shown by default, hold the image to reveal B
+- import button wired to the device photo picker

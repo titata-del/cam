@@ -5,29 +5,35 @@ const $$ = s => [...document.querySelectorAll(s)];
 
 let stream = null;
 let facingMode = "environment";
-let currentFilter = "none";
+let currentFilter = "None";
 let currentFilterCss = "none";
 let compareMode = false;
 let compareSelection = [];
+let galleryFilter = "all";
+let currentViewerIndex = null;
+let pendingAlbumMode = "create";
+
 let galleryItems = JSON.parse(localStorage.getItem("lumaGallery") || "[]");
 let customFilters = JSON.parse(localStorage.getItem("lumaFilters") || "[]");
+let albums = JSON.parse(localStorage.getItem("lumaAlbums") || "[]");
 
 const builtInFilters = [
-  ["None","none"],
-  ["Clean","brightness(1.05) contrast(.96) saturate(.94)"],
-  ["Sunday","brightness(1.06) contrast(.90) saturate(.88) sepia(.06)"],
-  ["Golden","brightness(1.02) contrast(.96) saturate(1.08) sepia(.16)"],
-  ["Digicam","contrast(1.12) saturate(1.10) brightness(1.01)"],
-  ["Cozy","brightness(.98) contrast(.91) saturate(.86) sepia(.18)"],
-  ["City","contrast(1.10) saturate(.88) brightness(.98)"],
-  ["Flash","brightness(1.12) contrast(1.08) saturate(.92)"],
-  ["Soft","brightness(1.08) contrast(.84) saturate(.90) blur(.25px)"],
-  ["Film","contrast(.94) saturate(.78) sepia(.12)"],
-  ["Night","brightness(.90) contrast(1.18) saturate(.82)"],
-  ["Euro Summer","brightness(1.05) contrast(.95) saturate(1.17) sepia(.07)"],
-  ["Old Money","brightness(1.02) contrast(.94) saturate(.78) sepia(.13)"],
-  ["Model Off Duty","contrast(1.12) saturate(.73) brightness(.96)"],
-  ["Angel","brightness(1.13) contrast(.82) saturate(.88) blur(.35px)"],
+  ["None","none",{}],
+  ["Clean","brightness(1.05) contrast(.96) saturate(.94)",{}],
+  ["Sunday","brightness(1.06) contrast(.90) saturate(.88) sepia(.06)",{}],
+  ["Golden","brightness(1.02) contrast(.96) saturate(1.08) sepia(.16)",{}],
+  ["Digicam","contrast(1.12) saturate(1.10) brightness(1.01)",{grain:12}],
+  ["Cozy","brightness(.98) contrast(.91) saturate(.86) sepia(.18)",{}],
+  ["City","contrast(1.10) saturate(.88) brightness(.98)",{}],
+  ["Flash","brightness(1.12) contrast(1.08) saturate(.92)",{}],
+  ["Soft","brightness(1.08) contrast(.84) saturate(.90) blur(.25px)",{}],
+  ["Film","contrast(.94) saturate(.78) sepia(.12)",{grain:16,fade:8}],
+  ["Vintage","brightness(.98) contrast(.9) saturate(.72) sepia(.22)",{grain:28,fade:12,vignette:16}],
+  ["Night","brightness(.90) contrast(1.18) saturate(.82)",{}],
+  ["Euro Summer","brightness(1.05) contrast(.95) saturate(1.17) sepia(.07)",{}],
+  ["Old Money","brightness(1.02) contrast(.94) saturate(.78) sepia(.13)",{grain:8}],
+  ["Model Off Duty","contrast(1.12) saturate(.73) brightness(.96)",{}],
+  ["Angel","brightness(1.13) contrast(.82) saturate(.88) blur(.35px)",{}]
 ];
 
 async function sha256(text) {
@@ -65,15 +71,14 @@ async function startCamera() {
   if (stream) stream.getTracks().forEach(t=>t.stop());
   try {
     stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: { ideal: facingMode },
-        width: { ideal: 1920 },
-        height: { ideal: 2560 }
-      },
+      video: { facingMode: { ideal: facingMode }, width:{ideal:1920}, height:{ideal:2560} },
       audio:false
     });
     $("#video").srcObject = stream;
     $("#filterPreview").srcObject = stream;
+    // Selfie preview should behave like a mirror. Captured output stays correctly oriented.
+    $("#video").style.transform = facingMode==="user" ? "scaleX(-1)" : "none";
+    $("#filterPreview").style.transform = facingMode==="user" ? "scaleX(-1)" : "none";
     $("#cameraError").classList.add("hidden");
     await renderZoom();
   } catch (e) {
@@ -83,204 +88,318 @@ async function startCamera() {
 }
 
 async function renderZoom() {
-  const wrap = $("#zoomButtons");
-  wrap.innerHTML = "";
+  const wrap = $("#zoomButtons"); wrap.innerHTML="";
   if (!stream) return;
   const track = stream.getVideoTracks()[0];
   const caps = track.getCapabilities ? track.getCapabilities() : {};
   const settings = track.getSettings ? track.getSettings() : {};
-  let options = [];
 
+  let options = [];
   if (caps.zoom) {
     const min = caps.zoom.min ?? 1, max = caps.zoom.max ?? 1;
-    [0.5,1,2,3,4,max].forEach(z=>{
-      if (z >= min && z <= max && !options.some(x=>Math.abs(x-z)<.05)) options.push(z)
+    [0.5,1,2,3,4,5,6,8,10,max].forEach(z=>{
+      if(z>=min && z<=max && !options.some(x=>Math.abs(x-z)<.05)) options.push(z);
     });
-    if (!options.length) options=[min,max].filter((v,i,a)=>a.indexOf(v)===i);
+    if(!options.length) options=[min,max].filter((v,i,a)=>a.indexOf(v)===i);
   } else {
     options = [1];
   }
-
   options.sort((a,b)=>a-b);
-  options.forEach((z,i)=>{
+  options.forEach(z=>{
     const b=document.createElement("button");
     b.className="zoom-btn"+((settings.zoom ? Math.abs(settings.zoom-z)<.05 : z===1)?" active":"");
     b.textContent=(Math.round(z*10)/10)+"×";
     b.onclick=async()=>{
-      if (caps.zoom) {
-        try { await track.applyConstraints({advanced:[{zoom:z}]}); } catch(e){}
-      }
-      $$(".zoom-btn").forEach(x=>x.classList.remove("active")); b.classList.add("active");
+      if(caps.zoom) try{await track.applyConstraints({advanced:[{zoom:z}]})}catch(e){}
+      $$(".zoom-btn").forEach(x=>x.classList.remove("active"));b.classList.add("active");
     };
     wrap.appendChild(b);
   });
 }
 
 function allFilters() {
-  return [...builtInFilters, ...customFilters.map(f=>[f.name,f.css])];
+  return [...builtInFilters, ...customFilters.map(f=>[f.name,f.css,f.fx||{}])];
+}
+function filterFx(name) {
+  const f=allFilters().find(x=>x[0]===name);
+  return f ? (f[2]||{}) : {};
 }
 
 function renderFilters() {
-  const strip=$("#filterStrip");
-  strip.innerHTML="";
-  allFilters().forEach(([name,css],i)=>{
+  const strip=$("#filterStrip"); strip.innerHTML="";
+  allFilters().forEach(([name,css])=>{
     const b=document.createElement("button");
     b.className="filter-chip"+(name===currentFilter?" active":"");
     b.textContent=name;
-    b.onclick=()=>{
-      currentFilter=name; currentFilterCss=css; $("#video").style.filter=css;
-      renderFilters();
-    };
+    b.onclick=()=>{currentFilter=name;currentFilterCss=css;$("#video").style.filter=css;renderFilters();};
     strip.appendChild(b);
   });
-
   $("#myFilters").innerHTML = customFilters.length
     ? customFilters.map((f,i)=>`<div class="my-filter-card">${f.name} <button data-del="${i}" style="border:0;background:none">×</button></div>`).join("")
     : `<span class="muted">No custom filters yet.</span>`;
   $$("[data-del]").forEach(b=>b.onclick=()=>{
-    customFilters.splice(+b.dataset.del,1); localStorage.setItem("lumaFilters",JSON.stringify(customFilters)); renderFilters();
+    customFilters.splice(+b.dataset.del,1);localStorage.setItem("lumaFilters",JSON.stringify(customFilters));renderFilters();
   });
 }
 
+function val(id){ return +$("#"+id).value; }
 function customCss() {
-  const bright=+$("#fBrightness").value/100;
-  const contrast=+$("#fContrast").value/100;
-  const sat=+$("#fSaturation").value/100;
-  const warmth=+$("#fWarmth").value/100;
-  const soft=+$("#fSoftness").value;
-  const sepia=(+$("#fSepia").value/100)+(warmth*.25);
-  return `brightness(${bright}) contrast(${contrast}) saturate(${sat}) sepia(${sepia.toFixed(2)}) blur(${soft}px)`;
+  const exposure = 1 + val("fExposure")/250;
+  const brightness = 1 + val("fBrightness")/300;
+  const contrast = 1 + val("fContrast")/250;
+  const sat = 1 + val("fSaturation")/180;
+  const brilliance = val("fBrilliance");
+  const vibrance = val("fVibrance");
+  const warmth = val("fWarmth");
+  const tint = val("fTint");
+  const highlights = val("fHighlights");
+  const shadows = val("fShadows");
+  const blackPoint = val("fBlackPoint");
+  const fade = val("fFade");
+
+  const sepia = Math.max(0, warmth)/450;
+  const hue = tint/4;
+  const softContrast = 1 + (brilliance/600) + (blackPoint/500) - (fade/500);
+  const finalBrightness = exposure * brightness * (1 + shadows/700) * (1 - highlights/1200);
+  const finalSat = sat * (1 + vibrance/300);
+  return `brightness(${finalBrightness.toFixed(3)}) contrast(${(contrast*softContrast).toFixed(3)}) saturate(${finalSat.toFixed(3)}) sepia(${sepia.toFixed(3)}) hue-rotate(${hue.toFixed(1)}deg)`;
 }
-function updateFilterPreview() { $("#filterPreview").style.filter = customCss(); }
+function customFx() {
+  return {
+    grain:val("fGrain"), vignette:val("fVignette"), sharpness:val("fSharpness"),
+    definition:val("fDefinition"), noise:val("fNoise"), fade:val("fFade"),
+    warmth:val("fWarmth")
+  };
+}
+function updateFilterPreview() {
+  $("#filterPreview").style.filter=customCss();
+  const fx=customFx();
+  let bg=[];
+  if(fx.vignette>0) bg.push(`radial-gradient(circle at center, transparent ${55-fx.vignette*.2}%, rgba(0,0,0,${(fx.vignette/170).toFixed(2)}) 100%)`);
+  if(fx.warmth>0) bg.push(`linear-gradient(rgba(255,133,70,${(fx.warmth/900).toFixed(3)}),rgba(255,133,70,${(fx.warmth/900).toFixed(3)}))`);
+  else if(fx.warmth<0) bg.push(`linear-gradient(rgba(70,120,255,${(-fx.warmth/1100).toFixed(3)}),rgba(70,120,255,${(-fx.warmth/1100).toFixed(3)}))`);
+  $("#filterPreviewFx").style.background=bg.join(",");
+  $("#filterPreviewFx").style.opacity = fx.grain ? Math.min(.35,fx.grain/280) : 1;
+}
+
+function renderAlbums() {
+  const box=$("#albumList");
+  if(galleryFilter!=="albums"){box.classList.add("hidden");return;}
+  box.classList.remove("hidden");
+  box.innerHTML=albums.length?albums.map((a,i)=>{
+    const count=galleryItems.filter(x=>(x.albums||[]).includes(a.id)).length;
+    return `<button class="album-card-mini" data-album="${a.id}"><strong>${a.name}</strong><span>${count} photos</span></button>`;
+  }).join(""):`<div class="muted">No albums yet.</div>`;
+  $$("[data-album]").forEach(b=>b.onclick=()=>{galleryFilter="album:"+b.dataset.album;renderGallery();});
+}
+
+function filteredGalleryIndexes() {
+  if(galleryFilter==="favorites") return galleryItems.map((x,i)=>x.favorite?i:null).filter(i=>i!==null);
+  if(galleryFilter.startsWith("album:")) {
+    const id=galleryFilter.split(":")[1];
+    return galleryItems.map((x,i)=>(x.albums||[]).includes(id)?i:null).filter(i=>i!==null);
+  }
+  return galleryItems.map((_,i)=>i);
+}
 
 function renderGallery() {
+  renderAlbums();
   const grid=$("#galleryGrid");
-  $("#emptyGallery").classList.toggle("hidden",galleryItems.length>0);
-  grid.innerHTML=galleryItems.map((it,i)=>`
-    <div class="gallery-item ${compareSelection.includes(i)?"selected":""}" data-item="${i}">
+  if(galleryFilter==="albums"){grid.innerHTML="";$("#emptyGallery").classList.add("hidden");return;}
+  const idxs=filteredGalleryIndexes();
+  $("#emptyGallery").classList.toggle("hidden",idxs.length>0);
+  grid.innerHTML=idxs.map(i=>{
+    const it=galleryItems[i];
+    const selected=compareSelection.includes(i);
+    const badge=selected?`<span class="select-badge">${compareSelection.indexOf(i)===0?"A":"B"}</span>`:"";
+    return `<div class="gallery-item ${selected?"selected":""}" data-item="${i}">
       <img src="${it.data}" alt="">
+      ${badge}
       <button class="fav-btn" data-fav="${i}">${it.favorite?"♥":"♡"}</button>
-    </div>`).join("");
+    </div>`;
+  }).join("");
 
-  $$("[data-fav]").forEach(b=>b.onclick=(e)=>{
-    e.stopPropagation(); const i=+b.dataset.fav;
-    galleryItems[i].favorite=!galleryItems[i].favorite; saveGallery();
+  $$("[data-fav]").forEach(b=>b.onclick=e=>{
+    e.stopPropagation(); const i=+b.dataset.fav; galleryItems[i].favorite=!galleryItems[i].favorite; saveGallery();
   });
   $$("[data-item]").forEach(el=>el.onclick=()=>{
-    if(!compareMode) return;
     const i=+el.dataset.item;
-    if(compareSelection.includes(i)) compareSelection=compareSelection.filter(x=>x!==i);
-    else if(compareSelection.length<2) compareSelection.push(i);
-    renderGallery();
-    if(compareSelection.length===2) openCompare();
+    if(compareMode){
+      if(compareSelection.includes(i)) compareSelection=compareSelection.filter(x=>x!==i);
+      else if(compareSelection.length<2) compareSelection.push(i);
+      renderGallery();
+      if(compareSelection.length===2) openCompare();
+    } else openViewer(i);
   });
 }
+
 function saveGallery() {
-  try {
-    localStorage.setItem("lumaGallery",JSON.stringify(galleryItems.slice(-40)));
-  } catch(e) {
-    // localStorage is intentionally a simple V1 store; large galleries will move to IndexedDB later.
-  }
+  try{localStorage.setItem("lumaGallery",JSON.stringify(galleryItems.slice(0,60)));}catch(e){}
   renderGallery();
 }
+function saveAlbums(){localStorage.setItem("lumaAlbums",JSON.stringify(albums));renderGallery();}
+
 function addPhoto(data) {
-  galleryItems.unshift({data, favorite:false, created:Date.now()});
-  if(galleryItems.length>30) galleryItems=galleryItems.slice(0,30);
+  galleryItems.unshift({data,favorite:false,created:Date.now(),albums:[]});
+  if(galleryItems.length>50)galleryItems=galleryItems.slice(0,50);
   saveGallery();
 }
 
+function openViewer(i){
+  currentViewerIndex=i;
+  $("#viewerImage").src=galleryItems[i].data;
+  $("#viewerFavorite").textContent=galleryItems[i].favorite?"♥ Favorited":"♡ Favorite";
+  $("#viewerOverlay").classList.remove("hidden");
+}
+function closeViewer(){$("#viewerOverlay").classList.add("hidden");currentViewerIndex=null;}
+
 function openCompare(){
   const [a,b]=compareSelection;
-  $("#compareA").src=galleryItems[a].data; $("#compareB").src=galleryItems[b].data;
+  $("#compareA").src=galleryItems[a].data;
+  $("#compareB").src=galleryItems[b].data;
   $("#compareOverlay").classList.remove("hidden");
-  $("#compareSlider").value=50; updateCompare(50);
-}
-function updateCompare(v){
-  $("#compareB").style.clipPath=`inset(0 0 0 ${v}%)`;
-  $("#compareDivider").style.left=v+"%";
+  $("#compareSlider").classList.add("hidden");
+  $("#compareDivider").classList.add("hidden");
+  $("#compareB").style.clipPath="none";
+  $("#compareB").style.opacity="0";
+  const stage=$(".compare-stage");
+  const pressStart=()=>$("#compareB").style.opacity="1";
+  const pressEnd=()=>$("#compareB").style.opacity="0";
+  stage.onpointerdown=pressStart;
+  stage.onpointerup=pressEnd;
+  stage.onpointercancel=pressEnd;
+  stage.onpointerleave=pressEnd;
 }
 
-function capture(){
-  const video=$("#video"), canvas=$("#canvas");
-  if(!video.videoWidth) return;
-  canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+function capture() {
+  const video=$("#video"),canvas=$("#canvas");
+  if(!video.videoWidth)return;
+  canvas.width=video.videoWidth;canvas.height=video.videoHeight;
   const ctx=canvas.getContext("2d");
-  if(facingMode==="user") {
-    ctx.translate(canvas.width,0); ctx.scale(-1,1);
-  }
-  // Canvas filters support the same CSS filter syntax in modern Safari.
-  ctx.filter=currentFilterCss || "none";
+  // Preview is mirrored for selfie, but saved photo should be natural/unmirrored.
+  ctx.filter=currentFilterCss||"none";
   ctx.drawImage(video,0,0,canvas.width,canvas.height);
   ctx.filter="none";
-  addPhoto(canvas.toDataURL("image/jpeg",.88));
-  if(navigator.vibrate) navigator.vibrate(20);
+
+  const fx=filterFx(currentFilter);
+  if(fx.vignette){
+    const g=ctx.createRadialGradient(canvas.width/2,canvas.height/2,Math.min(canvas.width,canvas.height)*.2,canvas.width/2,canvas.height/2,Math.max(canvas.width,canvas.height)*.72);
+    g.addColorStop(.55,"rgba(0,0,0,0)");g.addColorStop(1,`rgba(0,0,0,${Math.min(.5,fx.vignette/120)})`);ctx.fillStyle=g;ctx.fillRect(0,0,canvas.width,canvas.height);
+  }
+  if(fx.grain){
+    const amount=Math.floor((fx.grain/100)*18000);
+    ctx.globalAlpha=Math.min(.18,fx.grain/500);
+    for(let i=0;i<amount;i++){const x=Math.random()*canvas.width,y=Math.random()*canvas.height,v=Math.random()>0.5?255:0;ctx.fillStyle=`rgb(${v},${v},${v})`;ctx.fillRect(x,y,1.2,1.2);}
+    ctx.globalAlpha=1;
+  }
+  addPhoto(canvas.toDataURL("image/jpeg",.9));
+  const flash=$("#shutterFlash");flash.classList.remove("fire");void flash.offsetWidth;flash.classList.add("fire");
+  setTimeout(()=>flash.classList.remove("fire"),220);
 }
 
-async function focusAt(ev){
-  if(!stream) return;
-  const stage=ev.currentTarget, rect=stage.getBoundingClientRect();
-  const x=ev.clientX-rect.left, y=ev.clientY-rect.top;
-  const ring=$("#focusRing"); ring.style.left=x+"px"; ring.style.top=y+"px"; ring.classList.remove("hidden");
-  setTimeout(()=>ring.classList.add("hidden"),700);
-
-  const track=stream.getVideoTracks()[0];
-  const caps=track.getCapabilities ? track.getCapabilities() : {};
-  const nx=x/rect.width, ny=y/rect.height;
-  try {
+async function focusAt(ev) {
+  if(!stream)return;
+  const stage=ev.currentTarget,rect=stage.getBoundingClientRect();
+  const x=ev.clientX-rect.left,y=ev.clientY-rect.top;
+  const ring=$("#focusRing");ring.style.left=x+"px";ring.style.top=y+"px";ring.classList.remove("hidden");setTimeout(()=>ring.classList.add("hidden"),700);
+  const track=stream.getVideoTracks()[0],caps=track.getCapabilities?track.getCapabilities():{};
+  try{
     const adv={};
-    if(caps.focusMode?.includes("single-shot")) adv.focusMode="single-shot";
-    if("pointsOfInterest" in caps) adv.pointsOfInterest=[{x:nx,y:ny}];
-    if(Object.keys(adv).length) await track.applyConstraints({advanced:[adv]});
-  } catch(e){}
+    if(caps.focusMode?.includes("single-shot"))adv.focusMode="single-shot";
+    if("pointsOfInterest" in caps)adv.pointsOfInterest=[{x:x/rect.width,y:y/rect.height}];
+    if(Object.keys(adv).length)await track.applyConstraints({advanced:[adv]});
+  }catch(e){}
 }
 
-function bind(){
+function openAlbumModal(mode){
+  pendingAlbumMode=mode;
+  $("#albumOverlay").classList.remove("hidden");
+  $("#albumNameInput").value="";
+  if(mode==="create"){
+    $("#albumOverlayTitle").textContent="New album";
+    $("#albumNameInput").classList.remove("hidden");
+    $("#albumChoices").classList.add("hidden");
+  } else {
+    $("#albumOverlayTitle").textContent="Add to album";
+    $("#albumNameInput").classList.add("hidden");
+    $("#albumChoices").classList.remove("hidden");
+    $("#albumChoices").innerHTML=albums.length?albums.map(a=>`<button class="album-choice" data-choice="${a.id}">${a.name} <span>＋</span></button>`).join(""):`<div class="muted">Create an album first.</div>`;
+    $$("[data-choice]").forEach(b=>b.onclick=()=>{
+      if(currentViewerIndex===null)return;
+      const id=b.dataset.choice;
+      galleryItems[currentViewerIndex].albums=galleryItems[currentViewerIndex].albums||[];
+      if(!galleryItems[currentViewerIndex].albums.includes(id))galleryItems[currentViewerIndex].albums.push(id);
+      saveGallery();$("#albumOverlay").classList.add("hidden");
+    });
+  }
+}
+
+function bind() {
   $("#gridBtn").onclick=()=>$("#grid").classList.toggle("hidden");
-  $("#switchBtn").onclick=async()=>{ facingMode=facingMode==="environment"?"user":"environment"; await startCamera(); };
+  $("#switchBtn").onclick=async()=>{facingMode=facingMode==="environment"?"user":"environment";await startCamera();};
   $("#shutterBtn").onclick=capture;
 
   $("#traceInput").onchange=e=>{
-    const f=e.target.files[0]; if(!f)return;
-    const r=new FileReader(); r.onload=()=>{$("#traceImage").src=r.result;$("#traceImage").classList.remove("hidden");$("#traceOpacityWrap").classList.remove("hidden")};r.readAsDataURL(f);
+    const f=e.target.files[0];if(!f)return;const r=new FileReader();
+    r.onload=()=>{$("#traceImage").src=r.result;$("#traceImage").classList.remove("hidden");$("#traceOpacityWrap").classList.remove("hidden");$("#removeTraceBtn").classList.remove("hidden")};r.readAsDataURL(f);
   };
   $("#traceOpacity").oninput=e=>$("#traceImage").style.opacity=e.target.value/100;
+  $("#removeTraceBtn").onclick=()=>{$("#traceImage").src="";$("#traceImage").classList.add("hidden");$("#traceOpacityWrap").classList.add("hidden");$("#removeTraceBtn").classList.add("hidden");$("#traceInput").value="";};
   $("#cameraView .camera-stage").addEventListener("click",focusAt);
 
+  // '+' now opens the real device photo picker
   $("#galleryImportBtn").onclick=()=>$("#galleryInput").click();
-  $("#galleryInput").onchange=e=>[...e.target.files].forEach(f=>{
-    const r=new FileReader();r.onload=()=>addPhoto(r.result);r.readAsDataURL(f);
-  });
+  $("#galleryInput").onchange=e=>[...e.target.files].forEach(f=>{const r=new FileReader();r.onload=()=>addPhoto(r.result);r.readAsDataURL(f);});
 
   $("#editFiltersBtn").onclick=()=>activateView("filtersView");
-  ["fBrightness","fContrast","fSaturation","fWarmth","fSoftness","fSepia"].forEach(id=>$("#"+id).oninput=updateFilterPreview);
+
+  ["fExposure","fBrilliance","fHighlights","fShadows","fContrast","fBrightness","fBlackPoint","fSaturation","fVibrance","fWarmth","fTint","fSharpness","fDefinition","fNoise","fVignette","fGrain","fFade"].forEach(id=>$("#"+id).oninput=updateFilterPreview);
+
   $("#saveFilterBtn").onclick=()=>{
-    const name=$("#customFilterName").value.trim() || "My filter";
-    customFilters.push({name,css:customCss()});
+    const name=$("#customFilterName").value.trim()||"My filter";
+    customFilters.push({name,css:customCss(),fx:customFx()});
     localStorage.setItem("lumaFilters",JSON.stringify(customFilters));
-    $("#customFilterName").value="";
-    renderFilters();
+    $("#customFilterName").value="";renderFilters();
   };
 
-  $("#compareModeBtn").onclick=()=>{
-    compareMode=!compareMode; compareSelection=[];
-    $("#compareModeBtn").textContent=compareMode?"Pick 2":"Compare"; renderGallery();
+  $("#compareModeBtn").onclick=()=>{compareMode=!compareMode;compareSelection=[];$("#compareModeBtn").textContent=compareMode?"Pick A + B":"Compare";renderGallery();};
+  $("#closeCompare").onclick=()=>{$("#compareOverlay").classList.add("hidden");compareSelection=[];compareMode=false;$("#compareModeBtn").textContent="Compare";renderGallery();};
+
+  $("#newAlbumBtn").onclick=()=>openAlbumModal("create");
+  $("#cancelAlbumBtn").onclick=()=>$("#albumOverlay").classList.add("hidden");
+  $("#confirmAlbumBtn").onclick=()=>{
+    if(pendingAlbumMode!=="create")return;
+    const name=$("#albumNameInput").value.trim();if(!name)return;
+    albums.push({id:"a"+Date.now(),name});saveAlbums();$("#albumOverlay").classList.add("hidden");
   };
-  $("#compareSlider").oninput=e=>updateCompare(+e.target.value);
-  $("#closeCompare").onclick=()=>{$("#compareOverlay").classList.add("hidden");compareSelection=[];renderGallery();};
+
+  $$(".gallery-tab").forEach(b=>b.onclick=()=>{
+    $$(".gallery-tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");
+    galleryFilter=b.dataset.galleryFilter;renderGallery();
+  });
+
+  $("#closeViewer").onclick=closeViewer;
+  $("#viewerFavorite").onclick=()=>{
+    if(currentViewerIndex===null)return;
+    galleryItems[currentViewerIndex].favorite=!galleryItems[currentViewerIndex].favorite;saveGallery();openViewer(currentViewerIndex);
+  };
+  $("#viewerDelete").onclick=()=>{
+    if(currentViewerIndex===null)return;
+    galleryItems.splice(currentViewerIndex,1);saveGallery();closeViewer();
+  };
+  $("#viewerAddAlbum").onclick=()=>openAlbumModal("add");
 
   $$(".tab").forEach(b=>b.onclick=()=>activateView(b.dataset.view));
 }
 
-function activateView(id){
+function activateView(id) {
   $$(".view").forEach(v=>v.classList.toggle("active",v.id===id));
   $$(".tab").forEach(t=>t.classList.toggle("active",t.dataset.view===id));
 }
 
-function boot(){
-  renderKeypad(); renderFilters(); renderGallery(); bind(); updateFilterPreview();
-  if(sessionStorage.getItem("lumaUnlocked")==="1"){
-    $("#lockScreen").classList.add("hidden"); $("#app").classList.remove("hidden"); startCamera();
-  }
-  if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+function boot() {
+  renderKeypad();renderFilters();renderGallery();bind();updateFilterPreview();
+  if(sessionStorage.getItem("lumaUnlocked")==="1"){$("#lockScreen").classList.add("hidden");$("#app").classList.remove("hidden");startCamera();}
+  if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 }
 boot();
