@@ -397,9 +397,31 @@ function activateView(id) {
   $$(".tab").forEach(t=>t.classList.toggle("active",t.dataset.view===id));
 }
 
+async function forceFreshV3() {
+  if (sessionStorage.getItem("lumaCacheResetV3") === "1") return;
+  sessionStorage.setItem("lumaCacheResetV3","1");
+  try {
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.filter(k => k !== "luma-v3").map(k => caches.delete(k)));
+    }
+    if ("serviceWorker" in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const reg of regs) {
+        try { await reg.update(); } catch(e) {}
+      }
+    }
+  } catch(e) {}
+}
+
 function boot() {
+  forceFreshV3();
   renderKeypad();renderFilters();renderGallery();bind();updateFilterPreview();
   if(sessionStorage.getItem("lumaUnlocked")==="1"){$("#lockScreen").classList.add("hidden");$("#app").classList.remove("hidden");startCamera();}
-  if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js?v=3").then(reg => {
+      reg.update().catch(()=>{});
+    }).catch(()=>{});
+  }
 }
 boot();

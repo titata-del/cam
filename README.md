@@ -43,3 +43,9 @@ PWA pensée pour iPhone / GitHub Pages.
 - gallery viewer, deletion, favorites section, albums
 - A/B comparison: select two photos, A is shown by default, hold the image to reveal B
 - import button wired to the device photo picker
+
+## V2.1 cache fix
+- force la mise à jour des fichiers sur GitHub Pages
+- supprime les anciens caches Luma
+- service worker en network-first sur index/CSS/JS
+- numéro `v2.1` visible à côté du logo pour vérifier que la bonne version est chargée
