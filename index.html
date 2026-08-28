@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#f6eee9" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Luma" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <title>Luma Camera</title>
+</head>
+<body>
+  <div id="lockScreen" class="screen lock-screen">
+    <div class="lock-card">
+      <div class="mini-logo">L</div>
+      <h1>Luma</h1>
+      <p class="muted">your private camera diary</p>
+      <div id="dots" class="dots" aria-label="Code"></div>
+      <div class="keypad" id="keypad"></div>
+      <p id="lockMessage" class="lock-message"></p>
+    </div>
+  </div>
+
+  <div id="app" class="screen app hidden">
+    <header class="topbar">
+      <button id="gridBtn" class="icon-btn">#</button>
+      <div class="brand">Luma</div>
+      <button id="switchBtn" class="icon-btn">↻</button>
+    </header>
+
+    <main>
+      <section id="cameraView" class="view active">
+        <div class="camera-stage">
+          <video id="video" autoplay muted playsinline></video>
+          <img id="traceImage" class="trace-image hidden" alt="" />
+          <div id="grid" class="grid-overlay hidden">
+            <i></i><i></i><i></i><i></i>
+          </div>
+          <div id="focusRing" class="focus-ring hidden"></div>
+          <div id="cameraError" class="camera-error hidden"></div>
+
+          <div class="camera-tools">
+            <label class="pill">
+              Trace
+              <input id="traceInput" type="file" accept="image/*" hidden />
+            </label>
+            <label id="traceOpacityWrap" class="opacity-wrap hidden">
+              <input id="traceOpacity" type="range" min="5" max="90" value="38" />
+            </label>
+          </div>
+
+          <div id="zoomButtons" class="zoom-buttons"></div>
+
+          <div class="filter-strip-wrap">
+            <div id="filterStrip" class="filter-strip"></div>
+          </div>
+        </div>
+
+        <div class="capture-bar">
+          <button id="galleryImportBtn" class="round-mini" title="Importer">＋</button>
+          <button id="shutterBtn" class="shutter" aria-label="Prendre une photo"><span></span></button>
+          <button id="editFiltersBtn" class="round-mini" title="Créer un filtre">✦</button>
+          <input id="galleryInput" type="file" accept="image/*" multiple hidden />
+        </div>
+      </section>
+
+      <section id="galleryView" class="view">
+        <div class="section-head">
+          <div>
+            <h2>Gallery</h2>
+            <p class="muted">tap ♡ to keep your favorites</p>
+          </div>
+          <button id="compareModeBtn" class="soft-btn">Compare</button>
+        </div>
+        <div id="galleryGrid" class="gallery-grid"></div>
+        <div id="emptyGallery" class="empty-state">
+          <div class="empty-icon">♡</div>
+          <p>Your camera roll starts here.</p>
+        </div>
+      </section>
+
+      <section id="filtersView" class="view">
+        <div class="section-head">
+          <div>
+            <h2>Create a filter</h2>
+            <p class="muted">save your own signature look</p>
+          </div>
+        </div>
+
+        <div class="editor-card">
+          <label>Name
+            <input id="customFilterName" maxlength="24" placeholder="my sunday glow" />
+          </label>
+
+          <div class="slider-row"><span>Brightness</span><input id="fBrightness" type="range" min="70" max="140" value="100"></div>
+          <div class="slider-row"><span>Contrast</span><input id="fContrast" type="range" min="70" max="140" value="100"></div>
+          <div class="slider-row"><span>Saturation</span><input id="fSaturation" type="range" min="60" max="160" value="100"></div>
+          <div class="slider-row"><span>Warmth</span><input id="fWarmth" type="range" min="0" max="30" value="0"></div>
+          <div class="slider-row"><span>Softness</span><input id="fSoftness" type="range" min="0" max="5" step=".2" value="0"></div>
+          <div class="slider-row"><span>Sepia</span><input id="fSepia" type="range" min="0" max="45" value="0"></div>
+
+          <div class="preview-wrap">
+            <video id="filterPreview" autoplay muted playsinline></video>
+          </div>
+          <button id="saveFilterBtn" class="primary-btn">Save my filter</button>
+        </div>
+
+        <div class="section-head second">
+          <div><h2>My filters</h2></div>
+        </div>
+        <div id="myFilters" class="my-filters"></div>
+      </section>
+    </main>
+
+    <nav class="tabbar">
+      <button class="tab active" data-view="cameraView">Camera</button>
+      <button class="tab" data-view="galleryView">Gallery</button>
+      <button class="tab" data-view="filtersView">Filters</button>
+    </nav>
+  </div>
+
+  <div id="compareOverlay" class="compare-overlay hidden">
+    <button id="closeCompare" class="compare-close">×</button>
+    <div class="compare-inner">
+      <div class="compare-title">Pick your favorite</div>
+      <div class="compare-stage">
+        <img id="compareA" alt="A">
+        <img id="compareB" class="compare-b" alt="B">
+        <div id="compareDivider" class="compare-divider"></div>
+        <input id="compareSlider" type="range" min="0" max="100" value="50">
+      </div>
+      <div class="compare-labels"><span>A</span><span>B</span></div>
+    </div>
+  </div>
+
+  <canvas id="canvas" hidden></canvas>
+  <script src="app.js"></script>
+</body>
+</html>

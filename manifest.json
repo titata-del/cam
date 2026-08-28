@@ -1,0 +1,20 @@
+{
+  "name": "Luma — It Girl Camera",
+  "short_name": "Luma",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f6eee9",
+  "theme_color": "#f6eee9",
+  "icons": [
+    {
+      "src": "icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
