@@ -923,3 +923,67 @@ body:has(#filtersView.active) .topbar{
 
 /* ratio controls gone for PWA version */
 #ratioBtn{display:none!important}
+
+/* V3.4 — retouche galerie + avant/après */
+.viewer-actions{
+  grid-template-columns:repeat(4,1fr)!important;
+}
+.viewer-edit-panel{
+  flex:0 0 auto;
+  border-radius:20px;
+  background:rgba(255,255,255,.10);
+  padding:10px;
+  color:white;
+}
+.viewer-edit-head{
+  display:grid;
+  grid-template-columns:1fr auto auto;
+  gap:8px;
+  align-items:center;
+  margin-bottom:8px;
+  font-size:12px;
+}
+.viewer-edit-head button{
+  border:0;
+  border-radius:12px;
+  padding:8px 10px;
+  background:rgba(255,255,255,.12);
+  color:white;
+}
+#viewerEditSave{
+  background:white!important;
+  color:#2a2322!important;
+}
+.viewer-edit-filters{
+  display:flex;
+  gap:7px;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  padding-bottom:3px;
+}
+.viewer-edit-filters::-webkit-scrollbar{display:none}
+.viewer-edit-chip{
+  flex:0 0 auto;
+  border:0;
+  border-radius:14px;
+  padding:8px 11px;
+  background:rgba(255,255,255,.10);
+  color:white;
+  font-size:10px;
+}
+.viewer-edit-chip.active{
+  background:white;
+  color:#2a2322;
+}
+.viewer-edit-hint{
+  text-align:center;
+  font-size:9px;
+  opacity:.72;
+  padding-top:7px;
+}
+#viewerImage{
+  touch-action:none;
+  user-select:none;
+  -webkit-user-select:none;
+}

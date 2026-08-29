@@ -130,3 +130,10 @@ PWA pensée pour iPhone / GitHub Pages.
 - intensité des filtres retirée de la caméra
 - exposition conservée seule dans le panneau ±
 - photo enregistrée en plein cadre
+
+## V3.4
+- bouton Retoucher dans le viewer de la galerie
+- application des filtres existants sur une photo déjà prise
+- sauvegarde de l'original lors de la première retouche
+- appui long sur la photo retouchée = affiche l'originale
+- relâcher = revient à la version retouchée
