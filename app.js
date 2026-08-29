@@ -19,10 +19,7 @@ let appAppearance = localStorage.getItem("lumaAppearance") || "system";
 let appLanguage = localStorage.getItem("lumaLanguage") || "fr";
 let editingCustomFilterIndex = null;
 let timerSeconds = 0;
-let currentRatio = "4:3";
 let cameraExposureValue = 0;
-let filterIntensityValue = 100;
-let cameraAdjustMode = "exposure";
 let gallerySelectMode = false;
 let galleryBulkSelection = new Set();
 
@@ -94,9 +91,7 @@ function applyLanguage(){
   const mft=$("#myFiltersTitle"); if(mft)mft.textContent=t.myFilters;
   const sm=$("#selectModeBtn"); if(sm&&!gallerySelectMode)sm.textContent=t.select;
   const bd=$("#bulkDeleteBtn"); if(bd)bd.textContent=t.delete;
-  const ae=$("#adjustModeExposure"); if(ae)ae.textContent=t.expo;
-  const af=$("#adjustModeFilter"); if(af)af.textContent=t.filter;
-  renderAdjustmentStrip(); syncActiveAdjustment();
+  const ae=$("#adjustModeExposure"); if(ae)ae.textContent=t.expo;  renderAdjustmentStrip(); syncActiveAdjustment();
 
   $$("[data-language]").forEach(b=>b.classList.toggle("active", b.dataset.language===appLanguage));
 }
@@ -163,23 +158,12 @@ function bindPinchZoom(){
 
 
 
-function mixFilterCss(css, intensity){
-  if(!css || css==="none" || intensity<=0) return "none";
-  if(intensity>=100) return css;
-
-  // Approximation simple : on module les valeurs principales autour du neutre.
-  const t=intensity/100;
-  return css
-    .replace(/brightness\(([\d.]+)\)/g, (_,v)=>`brightness(${(1+(+v-1)*t).toFixed(3)})`)
-    .replace(/contrast\(([\d.]+)\)/g, (_,v)=>`contrast(${(1+(+v-1)*t).toFixed(3)})`)
-    .replace(/saturate\(([\d.]+)\)/g, (_,v)=>`saturate(${(1+(+v-1)*t).toFixed(3)})`)
-    .replace(/sepia\(([\d.]+)\)/g, (_,v)=>`sepia(${(+v*t).toFixed(3)})`)
-    .replace(/blur\(([\d.]+)px\)/g, (_,v)=>`blur(${(+v*t).toFixed(3)}px)`)
-    .replace(/hue-rotate\(([-\d.]+)deg\)/g, (_,v)=>`hue-rotate(${(+v*t).toFixed(2)}deg)`);
+function mixFilterCss(css){
+  return (!css || css==="none") ? "none" : css;
 }
 
 function currentLiveFilter(){
-  return mixFilterCss(currentFilterCss, filterIntensityValue);
+  return mixFilterCss(currentFilterCss);
 }
 
 function applyLiveFilter(){
@@ -206,21 +190,11 @@ async function applyCameraExposure(value){
 function updateCameraAdjustPanel(){
   const slider=$("#cameraAdjustSlider");
   const val=$("#cameraAdjustValue");
-  if(cameraAdjustMode==="exposure"){
-    slider.min=-100; slider.max=100; slider.value=cameraExposureValue;
-    val.textContent=(cameraExposureValue>0?"+":"")+cameraExposureValue;
-    $("#adjustModeExposure").classList.add("active");
-    $("#adjustModeFilter").classList.remove("active");
-  } else {
-    slider.min=0; slider.max=100; slider.value=filterIntensityValue;
-    val.textContent=filterIntensityValue+"%";
-    $("#adjustModeFilter").classList.add("active");
-    $("#adjustModeExposure").classList.remove("active");
-  }
+  slider.min=-100; slider.max=100; slider.value=cameraExposureValue;
+  val.textContent=(cameraExposureValue>0?"+":"")+cameraExposureValue;
 }
 
-function openCameraAdjust(mode="exposure"){
-  cameraAdjustMode=mode;
+function openCameraAdjust(){
   updateCameraAdjustPanel();
   $("#cameraAdjustPanel").classList.remove("hidden");
 }
@@ -232,18 +206,9 @@ function cycleTimer(){
   $("#timerBtn").textContent=`⏱ ${timerSeconds}s`;
 }
 
-function applyRatio(){
-  const stage=$(".camera-stage");
-  stage.dataset.ratio=currentRatio;
-  $("#ratioBtn").textContent=currentRatio;
-}
 
-function cycleRatio(){
-  const values=["4:3","1:1","16:9","Plein"];
-  const i=values.indexOf(currentRatio);
-  currentRatio=values[(i+1)%values.length];
-  applyRatio();
-}
+
+
 
 async function takePhotoWithTimer(){
   if(timerSeconds<=0){
@@ -632,26 +597,18 @@ function openCompare(){
   stage.onpointerleave=pressEnd;
 }
 
-function ratioDimensions(videoW,videoH){
-  if(currentRatio==="Plein") return {sx:0,sy:0,sw:videoW,sh:videoH,cw:videoW,ch:videoH};
-  const target=currentRatio==="1:1"?1:(currentRatio==="16:9"?16/9:4/3);
-  const source=videoW/videoH;
-  let sx=0,sy=0,sw=videoW,sh=videoH;
-  if(source>target){ sw=videoH*target; sx=(videoW-sw)/2; }
-  else { sh=videoW/target; sy=(videoH-sh)/2; }
-  return {sx,sy,sw,sh,cw:Math.round(sw),ch:Math.round(sh)};
-}
+
 
 function capture() {
   const video=$("#video"),canvas=$("#canvas");
   if(!video.videoWidth)return;
-  const crop=ratioDimensions(video.videoWidth,video.videoHeight);
-  canvas.width=crop.cw; canvas.height=crop.ch;
+  canvas.width=video.videoWidth;
+  canvas.height=video.videoHeight;
   const ctx=canvas.getContext("2d");
   const exposureBoost=Math.max(.35,1+cameraExposureValue/95);
   const base=currentLiveFilter();
   ctx.filter=`brightness(${exposureBoost.toFixed(3)}) ${base==="none"?"":base}`;
-  ctx.drawImage(video,crop.sx,crop.sy,crop.sw,crop.sh,0,0,canvas.width,canvas.height);
+  ctx.drawImage(video,0,0,canvas.width,canvas.height);
   ctx.filter="none";
 
   const fx=filterFx(currentFilter);
@@ -708,15 +665,9 @@ function openAlbumModal(mode){
 }
 
 function bind() {
-  $("#timerBtn").onclick=cycleTimer;
-  $("#ratioBtn").onclick=cycleRatio;
-  $("#cameraAdjustBtn").onclick=()=>openCameraAdjust("exposure");
-  $("#adjustModeExposure").onclick=()=>openCameraAdjust("exposure");
-  $("#adjustModeFilter").onclick=()=>openCameraAdjust("filter");
-  $("#closeCameraAdjust").onclick=()=>$("#cameraAdjustPanel").classList.add("hidden");
+  $("#timerBtn").onclick=cycleTimer;  $("#cameraAdjustBtn").onclick=()=>openCameraAdjust();  $("#closeCameraAdjust").onclick=()=>$("#cameraAdjustPanel").classList.add("hidden");
   $("#cameraAdjustSlider").oninput=e=>{
-    if(cameraAdjustMode==="exposure") applyCameraExposure(+e.target.value);
-    else { filterIntensityValue=+e.target.value; applyLiveFilter(); }
+    applyCameraExposure(+e.target.value);
     updateCameraAdjustPanel();
   };
 
@@ -902,12 +853,12 @@ function activateView(id) {
 }
 
 async function forceFreshV3() {
-  if (sessionStorage.getItem("lumaCacheResetV13") === "1") return;
-  sessionStorage.setItem("lumaCacheResetV13","1");
+  if (sessionStorage.getItem("lumaCacheResetV14") === "1") return;
+  sessionStorage.setItem("lumaCacheResetV14","1");
   try {
     if ("caches" in window) {
       const keys = await caches.keys();
-      await Promise.all(keys.filter(k => k !== "luma-v13").map(k => caches.delete(k)));
+      await Promise.all(keys.filter(k => k !== "luma-v14").map(k => caches.delete(k)));
     }
     if ("serviceWorker" in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
@@ -920,10 +871,10 @@ async function forceFreshV3() {
 
 function boot() {
   forceFreshV3();
-  renderKeypad();renderFilters();renderGallery();renderAdjustmentStrip();syncActiveAdjustment();bind();updateFilterPreview();activateView("cameraView");applyAppearance();applyLanguage();applyRatio();
+  renderKeypad();renderFilters();renderGallery();renderAdjustmentStrip();syncActiveAdjustment();bind();updateFilterPreview();activateView("cameraView");applyAppearance();applyLanguage();
   if(sessionStorage.getItem("lumaUnlocked")==="1"){$("#lockScreen").classList.add("hidden");$("#app").classList.remove("hidden");startCamera();}
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js?v=13").then(reg => {
+    navigator.serviceWorker.register("sw.js?v=14").then(reg => {
       reg.update().catch(()=>{});
     }).catch(()=>{});
   }

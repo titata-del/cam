@@ -784,3 +784,142 @@ html,body{
 .bulk-select.on{background:white;color:#2d2625}
 .gallery-item.bulk-selected{outline:3px solid white;outline-offset:-3px}
 .danger-soft{background:rgba(156,51,60,.12)!important;color:#9c333c!important}
+
+/* V3.2 — caméra plein écran façon iPhone */
+#cameraView.active{
+  position:absolute!important;
+  inset:0!important;
+  display:block!important;
+  padding:0!important;
+  z-index:1;
+  overflow:hidden!important;
+}
+
+#cameraView .camera-stage{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  background:#000!important;
+}
+
+#cameraView .camera-stage video{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  clip-path:none!important;
+}
+
+#cameraView .capture-bar{
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  bottom:calc(84px + env(safe-area-inset-bottom))!important;
+  height:82px!important;
+  z-index:12!important;
+  display:grid!important;
+  place-items:center!important;
+  pointer-events:none;
+}
+#cameraView .capture-bar .shutter{
+  pointer-events:auto;
+}
+
+#cameraView .filter-strip-wrap{
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  bottom:calc(165px + env(safe-area-inset-bottom))!important;
+  z-index:11!important;
+}
+
+#cameraView .camera-tools{
+  position:absolute!important;
+  top:calc(72px + env(safe-area-inset-top))!important;
+  left:12px!important;
+  right:12px!important;
+  z-index:13!important;
+}
+
+#cameraView .camera-adjust-panel{
+  bottom:calc(176px + env(safe-area-inset-bottom))!important;
+}
+
+.app{
+  position:relative!important;
+  display:block!important;
+  height:100dvh!important;
+  max-height:100dvh!important;
+  padding-bottom:0!important;
+}
+.app main{
+  position:absolute!important;
+  inset:0!important;
+  overflow:hidden!important;
+}
+
+.topbar{
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  top:0!important;
+  z-index:30!important;
+  background:linear-gradient(to bottom,rgba(0,0,0,.36),rgba(0,0,0,0))!important;
+  color:white!important;
+}
+#galleryView.active ~ *,
+#filtersView.active ~ *{}
+
+.tabbar{
+  position:absolute!important;
+  left:12px!important;
+  right:12px!important;
+  bottom:calc(8px + env(safe-area-inset-bottom))!important;
+  z-index:35!important;
+  width:auto!important;
+  max-width:none!important;
+  margin:0!important;
+}
+
+#galleryView.active,
+#filtersView.active{
+  position:absolute!important;
+  inset:64px 0 84px 0!important;
+  height:auto!important;
+  background:var(--bg)!important;
+  z-index:5!important;
+  padding:0 14px!important;
+}
+
+#galleryView.active ~ .tabbar,
+#filtersView.active ~ .tabbar{
+  position:absolute!important;
+}
+
+/* Header readable outside camera */
+body:has(#galleryView.active) .topbar,
+body:has(#filtersView.active) .topbar{
+  background:var(--bg)!important;
+  color:var(--ink)!important;
+}
+
+.camera-adjust-head.exposure-only{
+  display:grid!important;
+  grid-template-columns:1fr 32px!important;
+  align-items:center!important;
+}
+.adjust-title{
+  font-size:11px;
+  font-weight:600;
+  text-align:left;
+  padding-left:4px;
+}
+#adjustModeFilter{display:none!important}
+
+/* ratio controls gone for PWA version */
+#ratioBtn{display:none!important}

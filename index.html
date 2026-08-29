@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Luma" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-180.png" />
-  <link rel="stylesheet" href="styles.css?v=13" />
+  <link rel="stylesheet" href="styles.css?v=14" />
   <title>Luma Camera</title>
 </head>
 <body>
@@ -27,7 +27,7 @@
   <div id="app" class="screen app hidden">
     <header class="topbar">
       <button id="gridBtn" class="icon-btn">#</button>
-      <div class="brand-wrap"><div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v3.1</span></div><button id="settingsBtn" class="settings-btn" aria-label="Réglages"><span class="settings-dots">•••</span></button></div>
+      <div class="brand-wrap"><div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v3.2</span></div><button id="settingsBtn" class="settings-btn" aria-label="Réglages"><span class="settings-dots">•••</span></button></div>
       <button id="switchBtn" class="icon-btn switch-camera" aria-label="Retourner la caméra">⇄</button>
     </header>
 
@@ -46,7 +46,6 @@
 
           <div class="camera-tools">
             <button id="timerBtn" class="pill tool-pill" type="button">⏱ 0s</button>
-            <button id="ratioBtn" class="pill tool-pill" type="button">4:3</button>
             <button id="cameraAdjustBtn" class="pill tool-pill" type="button">±</button>
 
             <label class="pill">
@@ -62,9 +61,8 @@
           
 
           <div id="cameraAdjustPanel" class="camera-adjust-panel hidden">
-            <div class="camera-adjust-head">
-              <button id="adjustModeExposure" class="adjust-mode active" type="button">Exposition</button>
-              <button id="adjustModeFilter" class="adjust-mode" type="button">Intensité</button>
+            <div class="camera-adjust-head exposure-only">
+              <span id="adjustModeExposure" class="adjust-title">Exposition</span>
               <button id="closeCameraAdjust" class="adjust-close" type="button">×</button>
             </div>
             <div class="camera-adjust-value" id="cameraAdjustValue">0</div>
@@ -236,6 +234,6 @@
   </div>
 
   <canvas id="canvas" hidden></canvas>
-  <script src="app.js?v=13"></script>
+  <script src="app.js?v=14"></script>
 </body>
 </html>

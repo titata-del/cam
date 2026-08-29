@@ -123,3 +123,10 @@ PWA pensée pour iPhone / GitHub Pages.
 - galerie en grille régulière
 - heure sur chaque photo
 - sélection multiple + suppression groupée
+
+## V3.2
+- caméra plein écran façon iPhone
+- formats retirés de la PWA et gardés pour plus tard/native
+- intensité des filtres retirée de la caméra
+- exposition conservée seule dans le panneau ±
+- photo enregistrée en plein cadre
