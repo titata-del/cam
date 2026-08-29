@@ -1,9 +1,9 @@
-const CACHE = "luma-v10";
+const CACHE = "luma-v11";
 const CORE = [
   "./",
-  "index.html?v=10",
-  "styles.css?v=10",
-  "app.js?v=10",
+  "index.html?v=11",
+  "styles.css?v=11",
+  "app.js?v=11",
   "manifest.json",
   "icon-180.png",
   "icon-512.png"

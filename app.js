@@ -17,6 +17,7 @@ let pinchZoom = 1;
 let zoomIndicatorTimer = null;
 let appAppearance = localStorage.getItem("lumaAppearance") || "system";
 let appLanguage = localStorage.getItem("lumaLanguage") || "fr";
+let editingCustomFilterIndex = null;
 
 const translations = {
   fr:{settings:"Réglages",appearance:"Apparence",language:"Langue",auto:"Auto",light:"Clair",dark:"Sombre",camera:"Caméra",gallery:"Galerie",filters:"Filtres",compare:"Comparer",all:"Toutes",favorites:"Favoris",albums:"Albums",createFilter:"Créer un filtre",saveFilter:"Enregistrer le filtre",myFilters:"Mes filtres"},
@@ -24,7 +25,11 @@ const translations = {
 };
 
 let galleryItems = JSON.parse(localStorage.getItem("lumaGallery") || "[]");
-let customFilters = JSON.parse(localStorage.getItem("lumaFilters") || "[]");
+let customFilters = JSON.parse(localStorage.getItem("lumaFilters") || "[]").map(f=>({
+  ...f,
+  favorite: !!f.favorite,
+  adjustments: f.adjustments || null
+}));
 let albums = JSON.parse(localStorage.getItem("lumaAlbums") || "[]");
 
 const builtInFilters = [
@@ -75,7 +80,10 @@ function applyLanguage(){
   gt.forEach((b,i)=>{if(gl[i])b.textContent=gl[i]});
 
   const h2=$("#filtersView h2"); if(h2)h2.textContent=t.createFilter;
-  const save=$("#saveFilterBtn"); if(save)save.textContent=t.saveFilter;
+  const save=$("#saveFilterBtn");
+  if(save) save.textContent = editingCustomFilterIndex!==null
+    ? (appLanguage==="en"?"Update filter":"Mettre à jour le filtre")
+    : t.saveFilter;
   const mft=$("#myFiltersTitle"); if(mft)mft.textContent=t.myFilters;
   renderAdjustmentStrip(); syncActiveAdjustment();
 
@@ -192,13 +200,52 @@ async function startCamera() {
 
 
 function allFilters() {
-  return [...builtInFilters, ...customFilters.map(f=>[f.name,f.css,f.fx||{}])];
+  const customSorted=[...customFilters].sort((a,b)=>(b.favorite?1:0)-(a.favorite?1:0));
+  return [
+    ...customSorted.map(f=>[f.name,f.css,f.fx||{},true]),
+    ...builtInFilters.map(f=>[f[0],f[1],f[2]||{},false])
+  ];
 }
 function filterFx(name) {
   const f=allFilters().find(x=>x[0]===name);
   return f ? (f[2]||{}) : {};
 }
 
+
+
+function openCustomFilterEditor(index){
+  const f=customFilters[index];
+  if(!f)return;
+  editingCustomFilterIndex=index;
+
+  $("#customFilterName").value=f.name || "";
+  if(f.adjustments){
+    adjustmentDefs.forEach(d=>{
+      adjustmentValues[d.id] = Number.isFinite(+f.adjustments[d.id]) ? +f.adjustments[d.id] : d.value;
+    });
+  } else {
+    // For older filters we cannot perfectly reverse-engineer CSS values.
+    // Keep current values neutral and preserve the original preview until changed.
+    adjustmentDefs.forEach(d=>adjustmentValues[d.id]=d.value);
+  }
+
+  activeAdjustmentId="exposure";
+  activateView("filtersView");
+  renderAdjustmentStrip();
+  syncActiveAdjustment();
+
+  if(f.css){
+    $("#filterPreview").style.filter=f.css;
+  } else {
+    updateFilterPreview();
+  }
+
+  $("#saveFilterBtn").textContent = appLanguage==="en" ? "Update filter" : "Mettre à jour le filtre";
+}
+
+function serializeAdjustments(){
+  return Object.fromEntries(adjustmentDefs.map(d=>[d.id, adjustmentValues[d.id]]));
+}
 
 function renderFilterDirectory(){
   const box=$("#filterDirectory");
@@ -220,21 +267,21 @@ function renderFilterDirectory(){
   }).join("");
 
   $$("[data-use-filter]").forEach(b=>b.onclick=()=>{
-    const f=customFilters[+b.dataset.useFilter];
-    currentFilter=f.name; currentFilterCss=f.css;
-    $("#video").style.filter=f.css;
-    renderFilters();
+    openCustomFilterEditor(+b.dataset.useFilter);
   });
 
   $$("[data-fav-filter]").forEach(b=>b.onclick=()=>{
     const i=+b.dataset.favFilter;
     customFilters[i].favorite=!customFilters[i].favorite;
     localStorage.setItem("lumaFilters",JSON.stringify(customFilters));
+    renderFilters();
     renderFilterDirectory();
   });
 
   $$("[data-delete-filter]").forEach(b=>b.onclick=()=>{
     const i=+b.dataset.deleteFilter;
+    if(editingCustomFilterIndex===i) editingCustomFilterIndex=null;
+    else if(editingCustomFilterIndex!==null && editingCustomFilterIndex>i) editingCustomFilterIndex--;
     customFilters.splice(i,1);
     localStorage.setItem("lumaFilters",JSON.stringify(customFilters));
     renderFilters();
@@ -244,7 +291,7 @@ function renderFilterDirectory(){
 function renderFilters() {
   renderFilterDirectory();
   const strip=$("#filterStrip"); strip.innerHTML="";
-  allFilters().forEach(([name,css])=>{
+  allFilters().forEach(([name,css,fx,isCustom])=>{
     const b=document.createElement("button");
     b.className="filter-chip"+(name===currentFilter?" active":"");
     b.textContent=name;
@@ -539,7 +586,13 @@ function bind() {
   $("#gridBtn").onclick=()=>$("#grid").classList.toggle("hidden");
   $("#switchBtn").onclick=async()=>{facingMode=facingMode==="environment"?"user":"environment";await startCamera();};
   $("#shutterBtn").onclick=capture;
-  $("#editFiltersBtn").onclick=()=>activateView("filtersView");
+  $("#editFiltersBtn").onclick=()=>{
+    editingCustomFilterIndex=null;
+    $("#customFilterName").value="";
+    $("#saveFilterBtn").textContent=(translations[appLanguage]||translations.fr).saveFilter;
+    resetAdjustments();
+    activateView("filtersView");
+  };
 
   // Calque / photo de référence
   $("#traceInput").onchange=e=>{
@@ -572,11 +625,27 @@ function bind() {
     updateFilterPreview();
   };
   $("#saveFilterBtn").onclick=()=>{
-    const name=$("#customFilterName").value.trim()||"Mon filtre";
-    customFilters.push({name,css:customCss(),fx:customFx(),favorite:false});
+    const name=$("#customFilterName").value.trim()||(appLanguage==="en"?"My filter":"Mon filtre");
+    const data={
+      name,
+      css:customCss(),
+      fx:customFx(),
+      favorite: editingCustomFilterIndex!==null ? !!customFilters[editingCustomFilterIndex]?.favorite : false,
+      adjustments: serializeAdjustments()
+    };
+
+    if(editingCustomFilterIndex!==null){
+      customFilters[editingCustomFilterIndex]=data;
+    } else {
+      customFilters.push(data);
+    }
+
     localStorage.setItem("lumaFilters",JSON.stringify(customFilters));
+    editingCustomFilterIndex=null;
     $("#customFilterName").value="";
+    $("#saveFilterBtn").textContent=(translations[appLanguage]||translations.fr).saveFilter;
     renderFilters();
+    renderFilterDirectory();
     resetAdjustments();
   };
 
@@ -663,12 +732,12 @@ function activateView(id) {
 }
 
 async function forceFreshV3() {
-  if (sessionStorage.getItem("lumaCacheResetV10") === "1") return;
-  sessionStorage.setItem("lumaCacheResetV10","1");
+  if (sessionStorage.getItem("lumaCacheResetV11") === "1") return;
+  sessionStorage.setItem("lumaCacheResetV11","1");
   try {
     if ("caches" in window) {
       const keys = await caches.keys();
-      await Promise.all(keys.filter(k => k !== "luma-v10").map(k => caches.delete(k)));
+      await Promise.all(keys.filter(k => k !== "luma-v11").map(k => caches.delete(k)));
     }
     if ("serviceWorker" in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
@@ -684,7 +753,7 @@ function boot() {
   renderKeypad();renderFilters();renderGallery();renderAdjustmentStrip();syncActiveAdjustment();bind();updateFilterPreview();activateView("cameraView");applyAppearance();applyLanguage();
   if(sessionStorage.getItem("lumaUnlocked")==="1"){$("#lockScreen").classList.add("hidden");$("#app").classList.remove("hidden");startCamera();}
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js?v=10").then(reg => {
+    navigator.serviceWorker.register("sw.js?v=11").then(reg => {
       reg.update().catch(()=>{});
     }).catch(()=>{});
   }

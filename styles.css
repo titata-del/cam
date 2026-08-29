@@ -653,3 +653,12 @@ html,body{
 :root[data-theme="dark"] .filter-directory-item{
   background:rgba(255,255,255,.08);
 }
+
+/* V2.9 */
+.filter-directory-main{
+  cursor:pointer;
+  text-align:left;
+}
+.filter-directory-main:active{
+  opacity:.72;
+}

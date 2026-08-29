@@ -101,3 +101,10 @@ PWA pensée pour iPhone / GitHub Pages.
 - points Réglages recentrés
 - traduction anglaise des réglages photo
 - répertoire Mes filtres avec favoris en tête et suppression
+
+## V2.9
+- clic sur un filtre dans Mes filtres => ouverture dans l'éditeur
+- modification puis mise à jour du filtre existant
+- sauvegarde des réglages détaillés pour les nouveaux filtres
+- favoris de Mes filtres remontent en premier dans la barre de filtres caméra
+- suppression conservée
