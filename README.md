@@ -91,3 +91,13 @@ PWA pensée pour iPhone / GitHub Pages.
 - affichage dynamique du niveau de zoom
 - Réglages avec Apparence Auto / Clair / Sombre
 - Français / English
+
+## V2.8
+- suppression complète de l'ancienne barre de zoom
+- zoom uniquement au pincement
+- prévention du zoom de page et des gestes plein écran
+- niveau de zoom visible uniquement pendant le pincement
+- bouton photo recentré
+- points Réglages recentrés
+- traduction anglaise des réglages photo
+- répertoire Mes filtres avec favoris en tête et suppression

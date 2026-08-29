@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Luma" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-180.png" />
-  <link rel="stylesheet" href="styles.css?v=9" />
+  <link rel="stylesheet" href="styles.css?v=10" />
   <title>Luma Camera</title>
 </head>
 <body>
@@ -27,7 +27,7 @@
   <div id="app" class="screen app hidden">
     <header class="topbar">
       <button id="gridBtn" class="icon-btn">#</button>
-      <div class="brand-wrap"><div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v2.7</span></div><button id="settingsBtn" class="settings-btn" aria-label="Réglages">•••</button></div>
+      <div class="brand-wrap"><div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v2.8</span></div><button id="settingsBtn" class="settings-btn" aria-label="Réglages"><span class="settings-dots">•••</span></button></div>
       <button id="switchBtn" class="icon-btn switch-camera" aria-label="Retourner la caméra">⇄</button>
     </header>
 
@@ -54,7 +54,7 @@
             <button id="removeTraceBtn" class="pill hidden" type="button">Retirer</button>
           </div>
 
-          <div id="zoomButtons" class="zoom-buttons"></div>
+          
 
           <div class="filter-strip-wrap">
             <div id="filterStrip" class="filter-strip"></div>
@@ -129,6 +129,13 @@
 
           <button id="saveFilterBtn" class="primary-btn filter-save-btn">Enregistrer le filtre</button>
 </div>
+
+        <div class="filter-directory-wrap">
+          <div class="filter-directory-head">
+            <span id="myFiltersTitle">Mes filtres</span>
+          </div>
+          <div id="filterDirectory" class="filter-directory"></div>
+        </div>
 
         <div class="section-head second">
           <div><h2>Mes filtres</h2></div>
@@ -212,6 +219,6 @@
   </div>
 
   <canvas id="canvas" hidden></canvas>
-  <script src="app.js?v=9"></script>
+  <script src="app.js?v=10"></script>
 </body>
 </html>

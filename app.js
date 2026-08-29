@@ -19,8 +19,8 @@ let appAppearance = localStorage.getItem("lumaAppearance") || "system";
 let appLanguage = localStorage.getItem("lumaLanguage") || "fr";
 
 const translations = {
-  fr:{settings:"Réglages",appearance:"Apparence",language:"Langue",auto:"Auto",light:"Clair",dark:"Sombre",camera:"Caméra",gallery:"Galerie",filters:"Filtres",compare:"Comparer",all:"Toutes",favorites:"Favoris",albums:"Albums",createFilter:"Créer un filtre",saveFilter:"Enregistrer le filtre"},
-  en:{settings:"Settings",appearance:"Appearance",language:"Language",auto:"Auto",light:"Light",dark:"Dark",camera:"Camera",gallery:"Gallery",filters:"Filters",compare:"Compare",all:"All",favorites:"Favorites",albums:"Albums",createFilter:"Create a filter",saveFilter:"Save filter"}
+  fr:{settings:"Réglages",appearance:"Apparence",language:"Langue",auto:"Auto",light:"Clair",dark:"Sombre",camera:"Caméra",gallery:"Galerie",filters:"Filtres",compare:"Comparer",all:"Toutes",favorites:"Favoris",albums:"Albums",createFilter:"Créer un filtre",saveFilter:"Enregistrer le filtre",myFilters:"Mes filtres"},
+  en:{settings:"Settings",appearance:"Appearance",language:"Language",auto:"Auto",light:"Light",dark:"Dark",camera:"Camera",gallery:"Gallery",filters:"Filters",compare:"Compare",all:"All",favorites:"Favorites",albums:"Albums",createFilter:"Create a filter",saveFilter:"Save filter",myFilters:"My filters"}
 };
 
 let galleryItems = JSON.parse(localStorage.getItem("lumaGallery") || "[]");
@@ -76,6 +76,8 @@ function applyLanguage(){
 
   const h2=$("#filtersView h2"); if(h2)h2.textContent=t.createFilter;
   const save=$("#saveFilterBtn"); if(save)save.textContent=t.saveFilter;
+  const mft=$("#myFiltersTitle"); if(mft)mft.textContent=t.myFilters;
+  renderAdjustmentStrip(); syncActiveAdjustment();
 
   $$("[data-language]").forEach(b=>b.classList.toggle("active", b.dataset.language===appLanguage));
 }
@@ -106,7 +108,6 @@ async function applyZoomValue(value){
     await track.applyConstraints({advanced:[{zoom:snapped}]});
     pinchZoom=snapped;
     showZoomIndicator(snapped);
-    $$(".zoom-btn").forEach(x=>x.classList.remove("active"));
   }catch(e){}
 }
 
@@ -115,22 +116,30 @@ function bindPinchZoom(){
   if(!stage)return;
   const dist=(a,b)=>Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
 
+  ["gesturestart","gesturechange","gestureend"].forEach(type=>{
+    stage.addEventListener(type,e=>e.preventDefault(),{passive:false});
+  });
+
   stage.addEventListener("touchstart", e=>{
     if(e.touches.length!==2||!stream)return;
+    e.preventDefault();
     const track=stream.getVideoTracks()[0], caps=track.getCapabilities?track.getCapabilities():{};
     if(!caps.zoom)return;
     const s=track.getSettings?track.getSettings():{};
     pinchZoom=s.zoom||pinchZoom||1;
     pinchState={distance:dist(e.touches[0],e.touches[1]),zoom:pinchZoom};
-  },{passive:true});
+  },{passive:false});
 
   stage.addEventListener("touchmove", e=>{
     if(!pinchState||e.touches.length!==2)return;
+    e.preventDefault();
     const ratio=dist(e.touches[0],e.touches[1])/pinchState.distance;
     applyZoomValue(pinchState.zoom*ratio);
-  },{passive:true});
+  },{passive:false});
 
-  stage.addEventListener("touchend", e=>{if(e.touches.length<2)pinchState=null},{passive:true});
+  stage.addEventListener("touchend", e=>{
+    if(e.touches.length<2)pinchState=null;
+  },{passive:false});
 }
 
 
@@ -173,43 +182,14 @@ async function startCamera() {
     $("#video").style.transform = facingMode==="user" ? "scaleX(-1)" : "none";
     $("#filterPreview").style.transform = facingMode==="user" ? "scaleX(-1)" : "none";
     $("#cameraError").classList.add("hidden");
-    await renderZoom();
-    try{const s=stream.getVideoTracks()[0].getSettings();pinchZoom=s.zoom||1}catch(e){}
+        try{const s=stream.getVideoTracks()[0].getSettings();pinchZoom=s.zoom||1}catch(e){}
   } catch (e) {
     $("#cameraError").textContent = "Caméra indisponible. Vérifie l’autorisation caméra dans Safari puis rouvre l’app.";
     $("#cameraError").classList.remove("hidden");
   }
 }
 
-async function renderZoom() {
-  const wrap = $("#zoomButtons"); wrap.innerHTML="";
-  if (!stream) return;
-  const track = stream.getVideoTracks()[0];
-  const caps = track.getCapabilities ? track.getCapabilities() : {};
-  const settings = track.getSettings ? track.getSettings() : {};
 
-  let options = [];
-  if (caps.zoom) {
-    const min = caps.zoom.min ?? 1, max = caps.zoom.max ?? 1;
-    [0.5,1,2,3,4,5,6,8,10,max].forEach(z=>{
-      if(z>=min && z<=max && !options.some(x=>Math.abs(x-z)<.05)) options.push(z);
-    });
-    if(!options.length) options=[min,max].filter((v,i,a)=>a.indexOf(v)===i);
-  } else {
-    options = [1];
-  }
-  options.sort((a,b)=>a-b);
-  options.forEach(z=>{
-    const b=document.createElement("button");
-    b.className="zoom-btn"+((settings.zoom ? Math.abs(settings.zoom-z)<.05 : z===1)?" active":"");
-    b.textContent=(Math.round(z*10)/10)+"×";
-    b.onclick=async()=>{
-      if(caps.zoom) try{await track.applyConstraints({advanced:[{zoom:z}]})}catch(e){}
-      $$(".zoom-btn").forEach(x=>x.classList.remove("active"));b.classList.add("active");
-    };
-    wrap.appendChild(b);
-  });
-}
 
 function allFilters() {
   return [...builtInFilters, ...customFilters.map(f=>[f.name,f.css,f.fx||{}])];
@@ -219,7 +199,50 @@ function filterFx(name) {
   return f ? (f[2]||{}) : {};
 }
 
+
+function renderFilterDirectory(){
+  const box=$("#filterDirectory");
+  if(!box)return;
+  const sorted=[...customFilters].sort((a,b)=>(b.favorite?1:0)-(a.favorite?1:0));
+  if(!sorted.length){
+    box.innerHTML=`<span class="muted">${appLanguage==="en"?"No custom filters yet.":"Aucun filtre personnalisé pour le moment."}</span>`;
+    return;
+  }
+  box.innerHTML=sorted.map(f=>{
+    const originalIndex=customFilters.indexOf(f);
+    return `<div class="filter-directory-item">
+      <button class="filter-directory-main" data-use-filter="${originalIndex}">
+        <span class="filter-directory-name">${f.name}</span>
+      </button>
+      <button class="filter-fav" data-fav-filter="${originalIndex}" aria-label="Favori">${f.favorite?"♥":"♡"}</button>
+      <button class="filter-delete" data-delete-filter="${originalIndex}" aria-label="Supprimer">×</button>
+    </div>`;
+  }).join("");
+
+  $$("[data-use-filter]").forEach(b=>b.onclick=()=>{
+    const f=customFilters[+b.dataset.useFilter];
+    currentFilter=f.name; currentFilterCss=f.css;
+    $("#video").style.filter=f.css;
+    renderFilters();
+  });
+
+  $$("[data-fav-filter]").forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.favFilter;
+    customFilters[i].favorite=!customFilters[i].favorite;
+    localStorage.setItem("lumaFilters",JSON.stringify(customFilters));
+    renderFilterDirectory();
+  });
+
+  $$("[data-delete-filter]").forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.deleteFilter;
+    customFilters.splice(i,1);
+    localStorage.setItem("lumaFilters",JSON.stringify(customFilters));
+    renderFilters();
+  });
+}
+
 function renderFilters() {
+  renderFilterDirectory();
   const strip=$("#filterStrip"); strip.innerHTML="";
   allFilters().forEach(([name,css])=>{
     const b=document.createElement("button");
@@ -238,23 +261,23 @@ function renderFilters() {
 
 
 const adjustmentDefs = [
-  {id:"exposure", name:"Exposition", icon:"☀", min:-100, max:100, value:0},
-  {id:"brilliance", name:"Brillance", icon:"✦", min:-100, max:100, value:0},
-  {id:"highlights", name:"Hautes lumières", icon:"◐", min:-100, max:100, value:0},
-  {id:"shadows", name:"Ombres", icon:"◑", min:-100, max:100, value:0},
-  {id:"contrast", name:"Contraste", icon:"◒", min:-100, max:100, value:0},
-  {id:"brightness", name:"Luminosité", icon:"◉", min:-100, max:100, value:0},
-  {id:"blackPoint", name:"Point noir", icon:"●", min:0, max:100, value:0},
-  {id:"saturation", name:"Saturation", icon:"◈", min:-100, max:100, value:0},
-  {id:"vibrance", name:"Éclat", icon:"✺", min:-100, max:100, value:0},
-  {id:"warmth", name:"Chaleur", icon:"♨", min:-100, max:100, value:0},
-  {id:"tint", name:"Teinte", icon:"◌", min:-100, max:100, value:0},
-  {id:"sharpness", name:"Netteté", icon:"⌁", min:0, max:100, value:0},
-  {id:"definition", name:"Définition", icon:"◇", min:0, max:100, value:0},
-  {id:"noise", name:"Réduction du bruit", icon:"≈", min:0, max:100, value:0},
-  {id:"vignette", name:"Vignettage", icon:"◎", min:0, max:100, value:0},
-  {id:"grain", name:"Grain", icon:"⠿", min:0, max:100, value:0},
-  {id:"fade", name:"Fondu", icon:"◍", min:0, max:100, value:0}
+  {id:"exposure", fr:"Exposition", en:"Exposure", icon:"☀", min:-100, max:100, value:0},
+  {id:"brilliance", fr:"Brillance", en:"Brilliance", icon:"✦", min:-100, max:100, value:0},
+  {id:"highlights", fr:"Hautes lumières", en:"Highlights", icon:"◐", min:-100, max:100, value:0},
+  {id:"shadows", fr:"Ombres", en:"Shadows", icon:"◑", min:-100, max:100, value:0},
+  {id:"contrast", fr:"Contraste", en:"Contrast", icon:"◒", min:-100, max:100, value:0},
+  {id:"brightness", fr:"Luminosité", en:"Brightness", icon:"◉", min:-100, max:100, value:0},
+  {id:"blackPoint", fr:"Point noir", en:"Black Point", icon:"●", min:0, max:100, value:0},
+  {id:"saturation", fr:"Saturation", en:"Saturation", icon:"◈", min:-100, max:100, value:0},
+  {id:"vibrance", fr:"Éclat", en:"Vibrance", icon:"✺", min:-100, max:100, value:0},
+  {id:"warmth", fr:"Chaleur", en:"Warmth", icon:"♨", min:-100, max:100, value:0},
+  {id:"tint", fr:"Teinte", en:"Tint", icon:"◌", min:-100, max:100, value:0},
+  {id:"sharpness", fr:"Netteté", en:"Sharpness", icon:"⌁", min:0, max:100, value:0},
+  {id:"definition", fr:"Définition", en:"Definition", icon:"◇", min:0, max:100, value:0},
+  {id:"noise", fr:"Réduction du bruit", en:"Noise Reduction", icon:"≈", min:0, max:100, value:0},
+  {id:"vignette", fr:"Vignettage", en:"Vignette", icon:"◎", min:0, max:100, value:0},
+  {id:"grain", fr:"Grain", en:"Grain", icon:"⠿", min:0, max:100, value:0},
+  {id:"fade", fr:"Fondu", en:"Fade", icon:"◍", min:0, max:100, value:0}
 ];
 let adjustmentValues = Object.fromEntries(adjustmentDefs.map(d=>[d.id,d.value]));
 let activeAdjustmentId = "exposure";
@@ -265,7 +288,7 @@ function renderAdjustmentStrip(){
   strip.innerHTML = adjustmentDefs.map(d=>`
     <button class="adjustment-item ${d.id===activeAdjustmentId?"active":""}" data-adjust="${d.id}">
       <span class="adjustment-icon">${d.icon}</span>
-      <span class="adjustment-label">${d.name}</span>
+      <span class="adjustment-label">${d[appLanguage] || d.fr}</span>
       <span class="adjustment-mini-value">${adjustmentValues[d.id]}</span>
     </button>`).join("");
   setTimeout(syncAdjustmentScrollbar,0);
@@ -297,7 +320,7 @@ function bindAdjustmentScrollbar(){
 
 function syncActiveAdjustment(){
   const def=adjustmentDefs.find(d=>d.id===activeAdjustmentId);
-  $("#activeAdjustmentName").textContent=def.name;
+  $("#activeAdjustmentName").textContent=def[appLanguage] || def.fr;
   $("#activeAdjustmentValue").textContent=adjustmentValues[def.id];
   const s=$("#activeAdjustmentSlider");
   s.min=def.min; s.max=def.max; s.value=adjustmentValues[def.id];
@@ -550,7 +573,7 @@ function bind() {
   };
   $("#saveFilterBtn").onclick=()=>{
     const name=$("#customFilterName").value.trim()||"Mon filtre";
-    customFilters.push({name,css:customCss(),fx:customFx()});
+    customFilters.push({name,css:customCss(),fx:customFx(),favorite:false});
     localStorage.setItem("lumaFilters",JSON.stringify(customFilters));
     $("#customFilterName").value="";
     renderFilters();
@@ -640,12 +663,12 @@ function activateView(id) {
 }
 
 async function forceFreshV3() {
-  if (sessionStorage.getItem("lumaCacheResetV9") === "1") return;
-  sessionStorage.setItem("lumaCacheResetV9","1");
+  if (sessionStorage.getItem("lumaCacheResetV10") === "1") return;
+  sessionStorage.setItem("lumaCacheResetV10","1");
   try {
     if ("caches" in window) {
       const keys = await caches.keys();
-      await Promise.all(keys.filter(k => k !== "luma-v9").map(k => caches.delete(k)));
+      await Promise.all(keys.filter(k => k !== "luma-v10").map(k => caches.delete(k)));
     }
     if ("serviceWorker" in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
@@ -661,7 +684,7 @@ function boot() {
   renderKeypad();renderFilters();renderGallery();renderAdjustmentStrip();syncActiveAdjustment();bind();updateFilterPreview();activateView("cameraView");applyAppearance();applyLanguage();
   if(sessionStorage.getItem("lumaUnlocked")==="1"){$("#lockScreen").classList.add("hidden");$("#app").classList.remove("hidden");startCamera();}
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js?v=9").then(reg => {
+    navigator.serviceWorker.register("sw.js?v=10").then(reg => {
       reg.update().catch(()=>{});
     }).catch(()=>{});
   }
