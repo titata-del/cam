@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Luma" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-180.png" />
-  <link rel="stylesheet" href="styles.css?v=4" />
+  <link rel="stylesheet" href="styles.css?v=5" />
   <title>Luma Camera</title>
 </head>
 <body>
@@ -27,7 +27,7 @@
   <div id="app" class="screen app hidden">
     <header class="topbar">
       <button id="gridBtn" class="icon-btn">#</button>
-      <div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v2.2</span></div>
+      <div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v2.3</span></div>
       <button id="switchBtn" class="icon-btn switch-camera" aria-label="Retourner la caméra">⇄</button>
     </header>
 
@@ -138,8 +138,8 @@
     </nav>
   </div>
 
-  <div id="compareCalque" class="compare-overlay hidden">
-    <button id="closeComparer" class="compare-close">×</button>
+  <div id="compareOverlay" class="compare-overlay hidden">
+    <button id="closeCompare" class="compare-close">×</button>
     <div class="compare-inner">
       <div class="compare-title">Comparer</div>
       <div class="compare-stage">
@@ -153,22 +153,22 @@
   </div>
 
   
-  <div id="viewerCalque" class="viewer-overlay hidden">
+  <div id="viewerOverlay" class="viewer-overlay hidden">
     <button id="closeViewer" class="viewer-close">×</button>
     <div class="viewer-inner">
       <img id="viewerImage" alt="">
       <div class="viewer-actions">
         <button id="viewerFavorite" class="viewer-action">♡ Favori</button>
         <button id="viewerAddAlbum" class="viewer-action">＋ Album</button>
-        <button id="viewerSupprimer" class="viewer-action danger">Supprimer</button>
+        <button id="viewerDelete" class="viewer-action danger">Supprimer</button>
       </div>
     </div>
   </div>
 
-  <div id="albumCalque" class="album-overlay hidden">
+  <div id="albumOverlay" class="album-overlay hidden">
     <div class="album-card">
-      <h3 id="albumCalqueTitle">Nouvel album</h3>
-      <input id="albumNomInput" placeholder="ex. soirées d’été" maxlength="30">
+      <h3 id="albumOverlayTitle">Nouvel album</h3>
+      <input id="albumNameInput" placeholder="ex. soirées d’été" maxlength="30">
       <div id="albumChoices" class="album-choices hidden"></div>
       <div class="album-card-actions">
         <button id="cancelAlbumBtn" class="soft-btn">Annuler</button>
@@ -179,6 +179,6 @@
 
   <div id="shutterFlash" class="shutter-flash"></div>
 <canvas id="canvas" hidden></canvas>
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>

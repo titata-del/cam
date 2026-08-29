@@ -58,3 +58,9 @@ PWA pensée pour iPhone / GitHub Pages.
 - réglages traduits en français
 - un seul curseur actif à la fois avec bande horizontale de réglages
 - affichage v2.2 à côté de Luma pour vérifier la version
+
+## V2.3 hotfix
+- corrige les identifiants HTML accidentellement traduits en V2.2
+- rétablit tous les boutons et interactions JavaScript
+- nouvelle version de cache v5
+- numéro v2.3 visible dans l'interface

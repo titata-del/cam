@@ -415,12 +415,12 @@ function activateView(id) {
 }
 
 async function forceFreshV3() {
-  if (sessionStorage.getItem("lumaCacheResetV4") === "1") return;
-  sessionStorage.setItem("lumaCacheResetV4","1");
+  if (sessionStorage.getItem("lumaCacheResetV5") === "1") return;
+  sessionStorage.setItem("lumaCacheResetV5","1");
   try {
     if ("caches" in window) {
       const keys = await caches.keys();
-      await Promise.all(keys.filter(k => k !== "luma-v4").map(k => caches.delete(k)));
+      await Promise.all(keys.filter(k => k !== "luma-v5").map(k => caches.delete(k)));
     }
     if ("serviceWorker" in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
@@ -436,7 +436,7 @@ function boot() {
   renderKeypad();renderFilters();renderGallery();renderAdjustmentStrip();syncActiveAdjustment();bind();updateFilterPreview();
   if(sessionStorage.getItem("lumaUnlocked")==="1"){$("#lockScreen").classList.add("hidden");$("#app").classList.remove("hidden");startCamera();}
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js?v=4").then(reg => {
+    navigator.serviceWorker.register("sw.js?v=5").then(reg => {
       reg.update().catch(()=>{});
     }).catch(()=>{});
   }
