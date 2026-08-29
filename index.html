@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Luma" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-180.png" />
-  <link rel="stylesheet" href="styles.css?v=18" />
+  <link rel="stylesheet" href="styles.css?v=19" />
   <title>Luma Camera</title>
 </head>
 <body>
@@ -27,7 +27,7 @@
   <div id="app" class="screen app hidden">
     <header class="topbar">
       <button id="gridBtn" class="icon-btn">#</button>
-      <div class="brand-wrap"><div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v3.6</span></div><button id="settingsBtn" class="settings-btn" aria-label="Réglages"><span class="settings-dots">•••</span></button></div>
+      <div class="brand-wrap"><div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v3.7</span></div><button id="settingsBtn" class="settings-btn" aria-label="Réglages"><span class="settings-dots">•••</span></button></div>
       <button id="switchBtn" class="icon-btn switch-camera" aria-label="Retourner la caméra">⇄</button>
     </header>
 
@@ -87,6 +87,7 @@
           </div>
           <div class="gallery-actions">
             <button id="newAlbumBtn" class="soft-btn">+ Album</button>
+            <button id="rouletteBtn" class="soft-btn roulette-btn">✦ Au hasard</button>
             <button id="selectModeBtn" class="soft-btn">Sélectionner</button>
             <button id="bulkDeleteBtn" class="soft-btn danger-soft hidden">Supprimer</button>
             <button id="compareModeBtn" class="soft-btn">Comparer</button>
@@ -180,6 +181,24 @@
   </div>
 
   
+  
+  <div id="rouletteOverlay" class="roulette-overlay hidden">
+    <div class="roulette-card">
+      <div class="roulette-top">
+        <span id="rouletteTitle">Photo Roulette</span>
+        <button id="rouletteClose" class="roulette-close" type="button">×</button>
+      </div>
+      <div class="roulette-stage">
+        <img id="rouletteImage" alt="">
+        <div id="rouletteMeta" class="roulette-meta"></div>
+      </div>
+      <div class="roulette-actions">
+        <button id="rouletteAgain" type="button">Encore</button>
+        <button id="rouletteOpen" type="button">Ouvrir</button>
+      </div>
+    </div>
+  </div>
+
   <div id="viewerOverlay" class="viewer-overlay hidden">
     <button id="closeViewer" class="viewer-close">×</button>
     <div class="viewer-inner">
@@ -234,6 +253,6 @@
   </div>
 
   <canvas id="canvas" hidden></canvas>
-  <script src="app.js?v=18"></script>
+  <script src="app.js?v=19"></script>
 </body>
 </html>

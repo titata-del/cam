@@ -148,3 +148,10 @@ PWA pensée pour iPhone / GitHub Pages.
 - fonction Retoucher retirée de la PWA
 - retouche avancée réservée à la future app native
 - galerie simplifiée : Favori / Album / Supprimer
+
+## V3.7
+- Photo Roulette dans la galerie
+- sélection aléatoire pondérée : favoris et photos peu revues ont plus de chances de ressortir
+- date + heure dans la roulette
+- bouton Encore
+- bouton Ouvrir pour afficher la photo normalement

@@ -22,10 +22,11 @@ let timerSeconds = 0;
 let cameraExposureValue = 0;
 let gallerySelectMode = false;
 let galleryBulkSelection = new Set();
+let rouletteCurrentIndex = null;
 
 const translations = {
-  fr:{settings:"Réglages",expo:"Exposition",filter:"Intensité",select:"Sélectionner",delete:"Supprimer",appearance:"Apparence",language:"Langue",auto:"Auto",light:"Clair",dark:"Sombre",camera:"Caméra",gallery:"Galerie",filters:"Filtres",compare:"Comparer",all:"Toutes",favorites:"Favoris",albums:"Albums",createFilter:"Créer un filtre",saveFilter:"Enregistrer le filtre",myFilters:"Mes filtres"},
-  en:{settings:"Settings",expo:"Exposure",filter:"Intensity",select:"Select",delete:"Delete",appearance:"Appearance",language:"Language",auto:"Auto",light:"Light",dark:"Dark",camera:"Camera",gallery:"Gallery",filters:"Filters",compare:"Compare",all:"All",favorites:"Favorites",albums:"Albums",createFilter:"Create a filter",saveFilter:"Save filter",myFilters:"My filters"}
+  fr:{roulette:"Au hasard",rouletteTitle:"Photo Roulette",again:"Encore",open:"Ouvrir",settings:"Réglages",expo:"Exposition",filter:"Intensité",select:"Sélectionner",delete:"Supprimer",appearance:"Apparence",language:"Langue",auto:"Auto",light:"Clair",dark:"Sombre",camera:"Caméra",gallery:"Galerie",filters:"Filtres",compare:"Comparer",all:"Toutes",favorites:"Favoris",albums:"Albums",createFilter:"Créer un filtre",saveFilter:"Enregistrer le filtre",myFilters:"Mes filtres"},
+  en:{roulette:"Random",rouletteTitle:"Photo Roulette",again:"Again",open:"Open",settings:"Settings",expo:"Exposure",filter:"Intensity",select:"Select",delete:"Delete",appearance:"Appearance",language:"Language",auto:"Auto",light:"Light",dark:"Dark",camera:"Camera",gallery:"Gallery",filters:"Filters",compare:"Compare",all:"All",favorites:"Favorites",albums:"Albums",createFilter:"Create a filter",saveFilter:"Save filter",myFilters:"My filters"}
 };
 
 let galleryItems = JSON.parse(localStorage.getItem("lumaGallery") || "[]");
@@ -91,6 +92,10 @@ function applyLanguage(){
   const mft=$("#myFiltersTitle"); if(mft)mft.textContent=t.myFilters;
   const sm=$("#selectModeBtn"); if(sm&&!gallerySelectMode)sm.textContent=t.select;
   const bd=$("#bulkDeleteBtn"); if(bd)bd.textContent=t.delete;
+  const rb=$("#rouletteBtn"); if(rb)rb.textContent="✦ "+t.roulette;
+  const rt=$("#rouletteTitle"); if(rt)rt.textContent=t.rouletteTitle;
+  const ra=$("#rouletteAgain"); if(ra)ra.textContent=t.again;
+  const ro=$("#rouletteOpen"); if(ro)ro.textContent=t.open;
   const ae=$("#adjustModeExposure"); if(ae)ae.textContent=t.expo;  renderAdjustmentStrip(); syncActiveAdjustment();
 
   $$("[data-language]").forEach(b=>b.classList.toggle("active", b.dataset.language===appLanguage));
@@ -600,8 +605,61 @@ function addPhoto(data) {
 
 
 
+
+function rouletteWeight(item, index){
+  let w=1;
+  if(item.favorite) w+=3;
+  const lastSeen=Number(item.lastViewed||0);
+  const ageDays=(Date.now()-lastSeen)/(1000*60*60*24);
+  if(!lastSeen) w+=2;
+  else if(ageDays>30) w+=2;
+  else if(ageDays>7) w+=1;
+  return Math.max(1,w);
+}
+
+function pickRouletteIndex(){
+  if(!galleryItems.length)return null;
+  const pool=galleryItems.map((item,index)=>({index,w:rouletteWeight(item,index)}));
+  const total=pool.reduce((s,x)=>s+x.w,0);
+  let r=Math.random()*total;
+  for(const x of pool){
+    r-=x.w;
+    if(r<=0)return x.index;
+  }
+  return pool[pool.length-1].index;
+}
+
+function showRoulette(){
+  if(!galleryItems.length){
+    alert(appLanguage==="en"?"Take some photos first ✦":"Prends d’abord quelques photos ✦");
+    return;
+  }
+  rouletteCurrentIndex=pickRouletteIndex();
+  const item=galleryItems[rouletteCurrentIndex];
+  $("#rouletteImage").src=item.data;
+  const d=new Date(item.created||Date.now());
+  const date=d.toLocaleDateString(appLanguage==="en"?"en-GB":"fr-FR",{day:"2-digit",month:"short",year:"numeric"});
+  const time=d.toLocaleTimeString(appLanguage==="en"?"en-GB":"fr-FR",{hour:"2-digit",minute:"2-digit"});
+  $("#rouletteMeta").textContent=`${date} · ${time}${item.favorite?" · ♥":""}`;
+  $("#rouletteOverlay").classList.remove("hidden");
+}
+
+function closeRoulette(){
+  $("#rouletteOverlay").classList.add("hidden");
+}
+
+function openRoulettePhoto(){
+  if(rouletteCurrentIndex===null)return;
+  galleryItems[rouletteCurrentIndex].lastViewed=Date.now();
+  saveGallery();
+  closeRoulette();
+  openViewer(rouletteCurrentIndex);
+}
+
 function openViewer(i){
   currentViewerIndex=i;
+  galleryItems[i].lastViewed=Date.now();
+  localStorage.setItem("lumaGallery",JSON.stringify(galleryItems));
   $("#viewerImage").src=galleryItems[i].data;
   $("#viewerFavorite").textContent=galleryItems[i].favorite?"♥ Favori":"♡ Favori";
   $("#viewerOverlay").classList.remove("hidden");
@@ -694,6 +752,10 @@ function openAlbumModal(mode){
 }
 
 function bind() {
+  $("#rouletteBtn").onclick=showRoulette;
+  $("#rouletteClose").onclick=closeRoulette;
+  $("#rouletteAgain").onclick=showRoulette;
+  $("#rouletteOpen").onclick=openRoulettePhoto;
   $("#timerBtn").onclick=cycleTimer;  $("#cameraAdjustBtn").onclick=()=>openCameraAdjust();  $("#closeCameraAdjust").onclick=()=>$("#cameraAdjustPanel").classList.add("hidden");
   $("#cameraAdjustSlider").oninput=e=>{
     applyCameraExposure(+e.target.value);
@@ -875,12 +937,12 @@ function activateView(id) {
 }
 
 async function forceFreshV3() {
-  if (sessionStorage.getItem("lumaCacheResetV18") === "1") return;
-  sessionStorage.setItem("lumaCacheResetV18","1");
+  if (sessionStorage.getItem("lumaCacheResetV19") === "1") return;
+  sessionStorage.setItem("lumaCacheResetV19","1");
   try {
     if ("caches" in window) {
       const keys = await caches.keys();
-      await Promise.all(keys.filter(k => k !== "luma-v18").map(k => caches.delete(k)));
+      await Promise.all(keys.filter(k => k !== "luma-v19").map(k => caches.delete(k)));
     }
     if ("serviceWorker" in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
@@ -896,7 +958,7 @@ function boot() {
   renderKeypad();renderFilters();renderGallery();renderAdjustmentStrip();syncActiveAdjustment();bind();updateFilterPreview();activateView("cameraView");applyAppearance();applyLanguage();
   if(sessionStorage.getItem("lumaUnlocked")==="1"){$("#lockScreen").classList.add("hidden");$("#app").classList.remove("hidden");startCamera();}
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js?v=18").then(reg => {
+    navigator.serviceWorker.register("sw.js?v=19").then(reg => {
       reg.update().catch(()=>{});
     }).catch(()=>{});
   }

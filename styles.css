@@ -1056,3 +1056,89 @@ body:has(#filtersView.active) .topbar{
 .viewer-edit-hint{
   display:none!important;
 }
+
+/* V3.7 — Photo Roulette */
+.roulette-btn{
+  white-space:nowrap;
+}
+.roulette-overlay{
+  position:fixed;
+  inset:0;
+  z-index:120;
+  display:grid;
+  place-items:center;
+  padding:18px;
+  background:rgba(18,15,15,.62);
+  backdrop-filter:blur(20px);
+}
+.roulette-card{
+  width:min(420px,100%);
+  border-radius:28px;
+  background:var(--bg);
+  color:var(--ink);
+  padding:14px;
+  box-shadow:0 24px 70px rgba(0,0,0,.28);
+}
+.roulette-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:10px;
+  font-size:14px;
+  font-weight:600;
+}
+.roulette-close{
+  width:34px;height:34px;border:0;border-radius:50%;
+  background:rgba(255,255,255,.65);
+  color:var(--ink);font-size:21px;
+}
+.roulette-stage{
+  position:relative;
+  overflow:hidden;
+  border-radius:22px;
+  background:#111;
+  aspect-ratio:4/5;
+}
+.roulette-stage img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+.roulette-meta{
+  position:absolute;
+  left:10px;
+  bottom:10px;
+  padding:6px 9px;
+  border-radius:12px;
+  background:rgba(0,0,0,.42);
+  color:white;
+  font-size:10px;
+  backdrop-filter:blur(10px);
+}
+.roulette-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:10px;
+}
+.roulette-actions button{
+  min-height:42px;
+  border:0;
+  border-radius:15px;
+  background:rgba(255,255,255,.66);
+  color:var(--ink);
+}
+.roulette-actions button:last-child{
+  background:var(--ink);
+  color:var(--bg);
+}
+:root[data-theme="dark"] .roulette-close,
+:root[data-theme="dark"] .roulette-actions button{
+  background:rgba(255,255,255,.10);
+  color:var(--ink);
+}
+:root[data-theme="dark"] .roulette-actions button:last-child{
+  background:#f4efec;
+  color:#251f1e;
+}
