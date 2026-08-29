@@ -115,3 +115,11 @@ PWA pensée pour iPhone / GitHub Pages.
 - exposition directement dans la caméra
 - intensité du filtre directement dans la caméra
 - compte à rebours visuel avant déclenchement
+
+## V3.1
+- expo/intensité déplacées dans un panneau compact ±
+- exposition plus forte et visible
+- formats appliqués au cadrage + au fichier final
+- galerie en grille régulière
+- heure sur chaque photo
+- sélection multiple + suppression groupée

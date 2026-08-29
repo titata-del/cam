@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Luma" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-180.png" />
-  <link rel="stylesheet" href="styles.css?v=12" />
+  <link rel="stylesheet" href="styles.css?v=13" />
   <title>Luma Camera</title>
 </head>
 <body>
@@ -27,7 +27,7 @@
   <div id="app" class="screen app hidden">
     <header class="topbar">
       <button id="gridBtn" class="icon-btn">#</button>
-      <div class="brand-wrap"><div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v3.0</span></div><button id="settingsBtn" class="settings-btn" aria-label="Réglages"><span class="settings-dots">•••</span></button></div>
+      <div class="brand-wrap"><div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v3.1</span></div><button id="settingsBtn" class="settings-btn" aria-label="Réglages"><span class="settings-dots">•••</span></button></div>
       <button id="switchBtn" class="icon-btn switch-camera" aria-label="Retourner la caméra">⇄</button>
     </header>
 
@@ -47,6 +47,7 @@
           <div class="camera-tools">
             <button id="timerBtn" class="pill tool-pill" type="button">⏱ 0s</button>
             <button id="ratioBtn" class="pill tool-pill" type="button">4:3</button>
+            <button id="cameraAdjustBtn" class="pill tool-pill" type="button">±</button>
 
             <label class="pill">
               Calque
@@ -60,15 +61,14 @@
 
           
 
-          <div class="camera-adjustments">
-            <label class="camera-adjust-row">
-              <span id="exposureLabel">Expo</span>
-              <input id="cameraExposure" type="range" min="-100" max="100" value="0">
-            </label>
-            <label class="camera-adjust-row">
-              <span id="intensityLabel">Filtre</span>
-              <input id="filterIntensity" type="range" min="0" max="100" value="100">
-            </label>
+          <div id="cameraAdjustPanel" class="camera-adjust-panel hidden">
+            <div class="camera-adjust-head">
+              <button id="adjustModeExposure" class="adjust-mode active" type="button">Exposition</button>
+              <button id="adjustModeFilter" class="adjust-mode" type="button">Intensité</button>
+              <button id="closeCameraAdjust" class="adjust-close" type="button">×</button>
+            </div>
+            <div class="camera-adjust-value" id="cameraAdjustValue">0</div>
+            <input id="cameraAdjustSlider" type="range" min="-100" max="100" value="0">
           </div>
 
           <div class="filter-strip-wrap">
@@ -90,6 +90,8 @@
           </div>
           <div class="gallery-actions">
             <button id="newAlbumBtn" class="soft-btn">+ Album</button>
+            <button id="selectModeBtn" class="soft-btn">Sélectionner</button>
+            <button id="bulkDeleteBtn" class="soft-btn danger-soft hidden">Supprimer</button>
             <button id="compareModeBtn" class="soft-btn">Comparer</button>
           </div>
         </div>
@@ -234,6 +236,6 @@
   </div>
 
   <canvas id="canvas" hidden></canvas>
-  <script src="app.js?v=12"></script>
+  <script src="app.js?v=13"></script>
 </body>
 </html>

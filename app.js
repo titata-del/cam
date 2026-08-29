@@ -22,10 +22,13 @@ let timerSeconds = 0;
 let currentRatio = "4:3";
 let cameraExposureValue = 0;
 let filterIntensityValue = 100;
+let cameraAdjustMode = "exposure";
+let gallerySelectMode = false;
+let galleryBulkSelection = new Set();
 
 const translations = {
-  fr:{settings:"Réglages",expo:"Expo",filter:"Filtre",appearance:"Apparence",language:"Langue",auto:"Auto",light:"Clair",dark:"Sombre",camera:"Caméra",gallery:"Galerie",filters:"Filtres",compare:"Comparer",all:"Toutes",favorites:"Favoris",albums:"Albums",createFilter:"Créer un filtre",saveFilter:"Enregistrer le filtre",myFilters:"Mes filtres"},
-  en:{settings:"Settings",expo:"Exposure",filter:"Filter",appearance:"Appearance",language:"Language",auto:"Auto",light:"Light",dark:"Dark",camera:"Camera",gallery:"Gallery",filters:"Filters",compare:"Compare",all:"All",favorites:"Favorites",albums:"Albums",createFilter:"Create a filter",saveFilter:"Save filter",myFilters:"My filters"}
+  fr:{settings:"Réglages",expo:"Exposition",filter:"Intensité",select:"Sélectionner",delete:"Supprimer",appearance:"Apparence",language:"Langue",auto:"Auto",light:"Clair",dark:"Sombre",camera:"Caméra",gallery:"Galerie",filters:"Filtres",compare:"Comparer",all:"Toutes",favorites:"Favoris",albums:"Albums",createFilter:"Créer un filtre",saveFilter:"Enregistrer le filtre",myFilters:"Mes filtres"},
+  en:{settings:"Settings",expo:"Exposure",filter:"Intensity",select:"Select",delete:"Delete",appearance:"Appearance",language:"Language",auto:"Auto",light:"Light",dark:"Dark",camera:"Camera",gallery:"Gallery",filters:"Filters",compare:"Compare",all:"All",favorites:"Favorites",albums:"Albums",createFilter:"Create a filter",saveFilter:"Save filter",myFilters:"My filters"}
 };
 
 let galleryItems = JSON.parse(localStorage.getItem("lumaGallery") || "[]");
@@ -89,8 +92,10 @@ function applyLanguage(){
     ? (appLanguage==="en"?"Update filter":"Mettre à jour le filtre")
     : t.saveFilter;
   const mft=$("#myFiltersTitle"); if(mft)mft.textContent=t.myFilters;
-  const el=$("#exposureLabel"); if(el)el.textContent=t.expo;
-  const il=$("#intensityLabel"); if(il)il.textContent=t.filter;
+  const sm=$("#selectModeBtn"); if(sm&&!gallerySelectMode)sm.textContent=t.select;
+  const bd=$("#bulkDeleteBtn"); if(bd)bd.textContent=t.delete;
+  const ae=$("#adjustModeExposure"); if(ae)ae.textContent=t.expo;
+  const af=$("#adjustModeFilter"); if(af)af.textContent=t.filter;
   renderAdjustmentStrip(); syncActiveAdjustment();
 
   $$("[data-language]").forEach(b=>b.classList.toggle("active", b.dataset.language===appLanguage));
@@ -178,26 +183,46 @@ function currentLiveFilter(){
 }
 
 function applyLiveFilter(){
-  $("#video").style.filter=currentLiveFilter();
+  const exposureBoost=Math.max(.35,1+cameraExposureValue/95);
+  const base=currentLiveFilter();
+  $("#video").style.filter=`brightness(${exposureBoost.toFixed(3)}) ${base==="none"?"":base}`;
 }
 
 async function applyCameraExposure(value){
   cameraExposureValue=+value;
-  if(!stream) return;
-  const track=stream.getVideoTracks()[0];
-  const caps=track.getCapabilities?track.getCapabilities():{};
-  if(caps.exposureCompensation){
-    const min=caps.exposureCompensation.min ?? -2;
-    const max=caps.exposureCompensation.max ?? 2;
-    const target=min+(cameraExposureValue+100)/200*(max-min);
-    try{
-      await track.applyConstraints({advanced:[{exposureCompensation:target}]});
-    }catch(e){}
-  }else{
-    // Fallback visuel si Safari ne donne pas l'exposition matérielle.
-    const extra=1+cameraExposureValue/350;
-    $("#video").style.opacity=Math.max(.55,Math.min(1.15,extra));
+  if(stream){
+    const track=stream.getVideoTracks()[0];
+    const caps=track.getCapabilities?track.getCapabilities():{};
+    if(caps.exposureCompensation){
+      const min=caps.exposureCompensation.min ?? -3;
+      const max=caps.exposureCompensation.max ?? 3;
+      const target=min+(cameraExposureValue+100)/200*(max-min);
+      try{await track.applyConstraints({advanced:[{exposureCompensation:target}]});}catch(e){}
+    }
   }
+  applyLiveFilter();
+}
+
+function updateCameraAdjustPanel(){
+  const slider=$("#cameraAdjustSlider");
+  const val=$("#cameraAdjustValue");
+  if(cameraAdjustMode==="exposure"){
+    slider.min=-100; slider.max=100; slider.value=cameraExposureValue;
+    val.textContent=(cameraExposureValue>0?"+":"")+cameraExposureValue;
+    $("#adjustModeExposure").classList.add("active");
+    $("#adjustModeFilter").classList.remove("active");
+  } else {
+    slider.min=0; slider.max=100; slider.value=filterIntensityValue;
+    val.textContent=filterIntensityValue+"%";
+    $("#adjustModeFilter").classList.add("active");
+    $("#adjustModeExposure").classList.remove("active");
+  }
+}
+
+function openCameraAdjust(mode="exposure"){
+  cameraAdjustMode=mode;
+  updateCameraAdjustPanel();
+  $("#cameraAdjustPanel").classList.remove("hidden");
 }
 
 function cycleTimer(){
@@ -527,22 +552,39 @@ function renderGallery() {
   if(galleryFilter==="albums"){grid.innerHTML="";$("#emptyGallery").classList.add("hidden");return;}
   const idxs=filteredGalleryIndexes();
   $("#emptyGallery").classList.toggle("hidden",idxs.length>0);
+
   grid.innerHTML=idxs.map(i=>{
     const it=galleryItems[i];
     const selected=compareSelection.includes(i);
+    const bulkSelected=galleryBulkSelection.has(i);
+    const dt=new Date(it.created||Date.now());
+    const time=dt.toLocaleTimeString(appLanguage==="en"?"en-GB":"fr-FR",{hour:"2-digit",minute:"2-digit"});
     const badge=selected?`<span class="select-badge">${compareSelection.indexOf(i)===0?"A":"B"}</span>`:"";
-    return `<div class="gallery-item ${selected?"selected":""}" data-item="${i}">
+    const bulk=gallerySelectMode?`<span class="bulk-select ${bulkSelected?"on":""}">${bulkSelected?"✓":""}</span>`:"";
+    return `<div class="gallery-item ${selected?"selected":""} ${bulkSelected?"bulk-selected":""}" data-item="${i}">
       <img src="${it.data}" alt="">
-      ${badge}
+      ${badge}${bulk}
       <button class="fav-btn" data-fav="${i}">${it.favorite?"♥":"♡"}</button>
+      <div class="photo-time">${time}</div>
     </div>`;
   }).join("");
 
   $$("[data-fav]").forEach(b=>b.onclick=e=>{
-    e.stopPropagation(); const i=+b.dataset.fav; galleryItems[i].favorite=!galleryItems[i].favorite; saveGallery();
+    e.stopPropagation();
+    const i=+b.dataset.fav;
+    galleryItems[i].favorite=!galleryItems[i].favorite;
+    saveGallery();
   });
+
   $$("[data-item]").forEach(el=>el.onclick=()=>{
     const i=+el.dataset.item;
+    if(gallerySelectMode){
+      if(galleryBulkSelection.has(i)) galleryBulkSelection.delete(i);
+      else galleryBulkSelection.add(i);
+      $("#bulkDeleteBtn").classList.toggle("hidden",galleryBulkSelection.size===0);
+      renderGallery();
+      return;
+    }
     if(compareMode){
       if(compareSelection.includes(i)) compareSelection=compareSelection.filter(x=>x!==i);
       else if(compareSelection.length<2) compareSelection.push(i);
@@ -590,14 +632,26 @@ function openCompare(){
   stage.onpointerleave=pressEnd;
 }
 
+function ratioDimensions(videoW,videoH){
+  if(currentRatio==="Plein") return {sx:0,sy:0,sw:videoW,sh:videoH,cw:videoW,ch:videoH};
+  const target=currentRatio==="1:1"?1:(currentRatio==="16:9"?16/9:4/3);
+  const source=videoW/videoH;
+  let sx=0,sy=0,sw=videoW,sh=videoH;
+  if(source>target){ sw=videoH*target; sx=(videoW-sw)/2; }
+  else { sh=videoW/target; sy=(videoH-sh)/2; }
+  return {sx,sy,sw,sh,cw:Math.round(sw),ch:Math.round(sh)};
+}
+
 function capture() {
   const video=$("#video"),canvas=$("#canvas");
   if(!video.videoWidth)return;
-  canvas.width=video.videoWidth;canvas.height=video.videoHeight;
+  const crop=ratioDimensions(video.videoWidth,video.videoHeight);
+  canvas.width=crop.cw; canvas.height=crop.ch;
   const ctx=canvas.getContext("2d");
-  // Preview is mirrored for selfie, but saved photo should be natural/unmirrored.
-  ctx.filter=currentLiveFilter()||"none";
-  ctx.drawImage(video,0,0,canvas.width,canvas.height);
+  const exposureBoost=Math.max(.35,1+cameraExposureValue/95);
+  const base=currentLiveFilter();
+  ctx.filter=`brightness(${exposureBoost.toFixed(3)}) ${base==="none"?"":base}`;
+  ctx.drawImage(video,crop.sx,crop.sy,crop.sw,crop.sh,0,0,canvas.width,canvas.height);
   ctx.filter="none";
 
   const fx=filterFx(currentFilter);
@@ -656,11 +710,16 @@ function openAlbumModal(mode){
 function bind() {
   $("#timerBtn").onclick=cycleTimer;
   $("#ratioBtn").onclick=cycleRatio;
-  $("#cameraExposure").oninput=e=>applyCameraExposure(e.target.value);
-  $("#filterIntensity").oninput=e=>{
-    filterIntensityValue=+e.target.value;
-    applyLiveFilter();
+  $("#cameraAdjustBtn").onclick=()=>openCameraAdjust("exposure");
+  $("#adjustModeExposure").onclick=()=>openCameraAdjust("exposure");
+  $("#adjustModeFilter").onclick=()=>openCameraAdjust("filter");
+  $("#closeCameraAdjust").onclick=()=>$("#cameraAdjustPanel").classList.add("hidden");
+  $("#cameraAdjustSlider").oninput=e=>{
+    if(cameraAdjustMode==="exposure") applyCameraExposure(+e.target.value);
+    else { filterIntensityValue=+e.target.value; applyLiveFilter(); }
+    updateCameraAdjustPanel();
   };
+
   bindPinchZoom();
   $("#settingsBtn").onclick=openSettings;
   $("#closeSettings").onclick=()=>$("#settingsOverlay").classList.add("hidden");
@@ -743,6 +802,24 @@ function bind() {
   };
 
   // Comparateur A / B
+  $("#selectModeBtn").onclick=()=>{
+    gallerySelectMode=!gallerySelectMode;
+    galleryBulkSelection.clear();
+    $("#selectModeBtn").textContent=gallerySelectMode
+      ? (appLanguage==="en"?"Cancel":"Annuler")
+      : (appLanguage==="en"?"Select":"Sélectionner");
+    $("#bulkDeleteBtn").classList.add("hidden");
+    compareMode=false; compareSelection=[];
+    renderGallery();
+  };
+  $("#bulkDeleteBtn").onclick=()=>{
+    [...galleryBulkSelection].sort((a,b)=>b-a).forEach(i=>galleryItems.splice(i,1));
+    galleryBulkSelection.clear();
+    gallerySelectMode=false;
+    $("#bulkDeleteBtn").classList.add("hidden");
+    $("#selectModeBtn").textContent=appLanguage==="en"?"Select":"Sélectionner";
+    saveGallery();
+  };
   $("#compareModeBtn").onclick=()=>{
     compareMode=!compareMode;
     compareSelection=[];
@@ -825,12 +902,12 @@ function activateView(id) {
 }
 
 async function forceFreshV3() {
-  if (sessionStorage.getItem("lumaCacheResetV12") === "1") return;
-  sessionStorage.setItem("lumaCacheResetV12","1");
+  if (sessionStorage.getItem("lumaCacheResetV13") === "1") return;
+  sessionStorage.setItem("lumaCacheResetV13","1");
   try {
     if ("caches" in window) {
       const keys = await caches.keys();
-      await Promise.all(keys.filter(k => k !== "luma-v12").map(k => caches.delete(k)));
+      await Promise.all(keys.filter(k => k !== "luma-v13").map(k => caches.delete(k)));
     }
     if ("serviceWorker" in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
@@ -846,7 +923,7 @@ function boot() {
   renderKeypad();renderFilters();renderGallery();renderAdjustmentStrip();syncActiveAdjustment();bind();updateFilterPreview();activateView("cameraView");applyAppearance();applyLanguage();applyRatio();
   if(sessionStorage.getItem("lumaUnlocked")==="1"){$("#lockScreen").classList.add("hidden");$("#app").classList.remove("hidden");startCamera();}
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js?v=12").then(reg => {
+    navigator.serviceWorker.register("sw.js?v=13").then(reg => {
       reg.update().catch(()=>{});
     }).catch(()=>{});
   }
