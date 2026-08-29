@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Luma" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-180.png" />
-  <link rel="stylesheet" href="styles.css?v=3" />
+  <link rel="stylesheet" href="styles.css?v=4" />
   <title>Luma Camera</title>
 </head>
 <body>
@@ -17,7 +17,7 @@
     <div class="lock-card">
       <div class="mini-logo">L</div>
       <h1>Luma</h1>
-      <p class="muted">your private camera diary</p>
+      <p class="muted">ton appareil photo privé</p>
       <div id="dots" class="dots" aria-label="Code"></div>
       <div class="keypad" id="keypad"></div>
       <p id="lockMessage" class="lock-message"></p>
@@ -27,7 +27,7 @@
   <div id="app" class="screen app hidden">
     <header class="topbar">
       <button id="gridBtn" class="icon-btn">#</button>
-      <div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v2.1</span></div>
+      <div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v2.2</span></div>
       <button id="switchBtn" class="icon-btn switch-camera" aria-label="Retourner la caméra">⇄</button>
     </header>
 
@@ -44,13 +44,13 @@
 
           <div class="camera-tools">
             <label class="pill">
-              Overlay
+              Calque
               <input id="traceInput" type="file" accept="image/*" hidden />
             </label>
             <label id="traceOpacityWrap" class="opacity-wrap hidden">
               <input id="traceOpacity" type="range" min="5" max="90" value="38" />
             </label>
-            <button id="removeTraceBtn" class="pill hidden" type="button">Remove</button>
+            <button id="removeTraceBtn" class="pill hidden" type="button">Retirer</button>
           </div>
 
           <div id="zoomButtons" class="zoom-buttons"></div>
@@ -61,28 +61,26 @@
         </div>
 
         <div class="capture-bar">
-          <button id="galleryImportBtn" class="round-mini" title="Importer">＋</button>
-          <button id="shutterBtn" class="shutter" aria-label="Prendre une photo"><span></span></button>
+<button id="shutterBtn" class="shutter" aria-label="Prendre une photo"><span></span></button>
           <button id="editFiltersBtn" class="round-mini" title="Créer un filtre">✦</button>
-          <input id="galleryInput" type="file" accept="image/*" multiple hidden />
-        </div>
+</div>
       </section>
 
       <section id="galleryView" class="view">
         <div class="section-head">
           <div>
-            <h2>Gallery</h2>
-            <p class="muted">your photos, albums & favorites</p>
+            <h2>Galerie</h2>
+            <p class="muted">tes photos, albums et favoris</p>
           </div>
           <div class="gallery-actions">
             <button id="newAlbumBtn" class="soft-btn">+ Album</button>
-            <button id="compareModeBtn" class="soft-btn">Compare</button>
+            <button id="compareModeBtn" class="soft-btn">Comparer</button>
           </div>
         </div>
 
         <div class="gallery-tabs">
-          <button class="gallery-tab active" data-gallery-filter="all">All</button>
-          <button class="gallery-tab" data-gallery-filter="favorites">Favorites</button>
+          <button class="gallery-tab active" data-gallery-filter="all">Toutes</button>
+          <button class="gallery-tab" data-gallery-filter="favorites">Favoris</button>
           <button class="gallery-tab" data-gallery-filter="albums">Albums</button>
         </div>
 
@@ -90,68 +88,60 @@
         <div id="galleryGrid" class="gallery-grid"></div>
         <div id="emptyGallery" class="empty-state">
           <div class="empty-icon">♡</div>
-          <p>Your camera roll starts here.</p>
+          <p>Ta galerie commence ici.</p>
         </div>
       </section>
 
       <section id="filtersView" class="view">
         <div class="section-head">
           <div>
-            <h2>Create a filter</h2>
-            <p class="muted">save your own signature look</p>
+            <h2>Créer un filtre</h2>
+            <p class="muted">crée ton propre rendu</p>
           </div>
         </div>
 
         <div class="editor-card">
-          <label>Name
-            <input id="customFilterName" maxlength="24" placeholder="my sunday glow" />
+          <label>Nom
+            <input id="customFilterNom" maxlength="24" placeholder="mon filtre" />
           </label>
 
-          <div class="adjustments-grid">
-            <div class="slider-row"><span>Exposure</span><input id="fExposure" type="range" min="-100" max="100" value="0"></div>
-            <div class="slider-row"><span>Brilliance</span><input id="fBrilliance" type="range" min="-100" max="100" value="0"></div>
-            <div class="slider-row"><span>Highlights</span><input id="fHighlights" type="range" min="-100" max="100" value="0"></div>
-            <div class="slider-row"><span>Shadows</span><input id="fShadows" type="range" min="-100" max="100" value="0"></div>
-            <div class="slider-row"><span>Contrast</span><input id="fContrast" type="range" min="-100" max="100" value="0"></div>
-            <div class="slider-row"><span>Brightness</span><input id="fBrightness" type="range" min="-100" max="100" value="0"></div>
-            <div class="slider-row"><span>Black Point</span><input id="fBlackPoint" type="range" min="0" max="100" value="0"></div>
-            <div class="slider-row"><span>Saturation</span><input id="fSaturation" type="range" min="-100" max="100" value="0"></div>
-            <div class="slider-row"><span>Vibrance</span><input id="fVibrance" type="range" min="-100" max="100" value="0"></div>
-            <div class="slider-row"><span>Warmth</span><input id="fWarmth" type="range" min="-100" max="100" value="0"></div>
-            <div class="slider-row"><span>Tint</span><input id="fTint" type="range" min="-100" max="100" value="0"></div>
-            <div class="slider-row"><span>Sharpness</span><input id="fSharpness" type="range" min="0" max="100" value="0"></div>
-            <div class="slider-row"><span>Definition</span><input id="fDefinition" type="range" min="0" max="100" value="0"></div>
-            <div class="slider-row"><span>Noise Reduce</span><input id="fNoise" type="range" min="0" max="100" value="0"></div>
-            <div class="slider-row"><span>Vignette</span><input id="fVignette" type="range" min="0" max="100" value="0"></div>
-            <div class="slider-row"><span>Grain</span><input id="fGrain" type="range" min="0" max="100" value="0"></div>
-            <div class="slider-row"><span>Fade</span><input id="fFade" type="range" min="0" max="100" value="0"></div>
+          
+          <div class="apple-adjustments">
+            <div id="adjustmentStrip" class="adjustment-strip"></div>
+            <div class="active-adjustment">
+              <div class="adjustment-head">
+                <span id="activeAdjustmentName">Exposition</span>
+                <span id="activeAdjustmentValue">0</span>
+              </div>
+              <input id="activeAdjustmentSlider" class="apple-slider" type="range" min="-100" max="100" value="0">
+            </div>
           </div>
 
           <div class="preview-wrap">
             <video id="filterPreview" autoplay muted playsinline></video>
             <div id="filterPreviewFx" class="filter-preview-fx"></div>
           </div>
-          <button id="saveFilterBtn" class="primary-btn">Save my filter</button>
+          <button id="saveFilterBtn" class="primary-btn">Enregistrer le filtre</button>
         </div>
 
         <div class="section-head second">
-          <div><h2>My filters</h2></div>
+          <div><h2>Mes filtres</h2></div>
         </div>
         <div id="myFilters" class="my-filters"></div>
       </section>
     </main>
 
     <nav class="tabbar">
-      <button class="tab active" data-view="cameraView">Camera</button>
-      <button class="tab" data-view="galleryView">Gallery</button>
-      <button class="tab" data-view="filtersView">Filters</button>
+      <button class="tab active" data-view="cameraView">Caméra</button>
+      <button class="tab" data-view="galleryView">Galerie</button>
+      <button class="tab" data-view="filtersView">Filtres</button>
     </nav>
   </div>
 
-  <div id="compareOverlay" class="compare-overlay hidden">
-    <button id="closeCompare" class="compare-close">×</button>
+  <div id="compareCalque" class="compare-overlay hidden">
+    <button id="closeComparer" class="compare-close">×</button>
     <div class="compare-inner">
-      <div class="compare-title">Pick your favorite</div>
+      <div class="compare-title">Comparer</div>
       <div class="compare-stage">
         <img id="compareA" alt="A">
         <img id="compareB" class="compare-b" alt="B">
@@ -163,32 +153,32 @@
   </div>
 
   
-  <div id="viewerOverlay" class="viewer-overlay hidden">
+  <div id="viewerCalque" class="viewer-overlay hidden">
     <button id="closeViewer" class="viewer-close">×</button>
     <div class="viewer-inner">
       <img id="viewerImage" alt="">
       <div class="viewer-actions">
-        <button id="viewerFavorite" class="viewer-action">♡ Favorite</button>
+        <button id="viewerFavorite" class="viewer-action">♡ Favori</button>
         <button id="viewerAddAlbum" class="viewer-action">＋ Album</button>
-        <button id="viewerDelete" class="viewer-action danger">Delete</button>
+        <button id="viewerSupprimer" class="viewer-action danger">Supprimer</button>
       </div>
     </div>
   </div>
 
-  <div id="albumOverlay" class="album-overlay hidden">
+  <div id="albumCalque" class="album-overlay hidden">
     <div class="album-card">
-      <h3 id="albumOverlayTitle">New album</h3>
-      <input id="albumNameInput" placeholder="e.g. summer nights" maxlength="30">
+      <h3 id="albumCalqueTitle">Nouvel album</h3>
+      <input id="albumNomInput" placeholder="ex. soirées d’été" maxlength="30">
       <div id="albumChoices" class="album-choices hidden"></div>
       <div class="album-card-actions">
-        <button id="cancelAlbumBtn" class="soft-btn">Cancel</button>
-        <button id="confirmAlbumBtn" class="primary-btn inline">Save</button>
+        <button id="cancelAlbumBtn" class="soft-btn">Annuler</button>
+        <button id="confirmAlbumBtn" class="primary-btn inline">Enregistrer</button>
       </div>
     </div>
   </div>
 
   <div id="shutterFlash" class="shutter-flash"></div>
 <canvas id="canvas" hidden></canvas>
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>

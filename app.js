@@ -5,7 +5,7 @@ const $$ = s => [...document.querySelectorAll(s)];
 
 let stream = null;
 let facingMode = "environment";
-let currentFilter = "None";
+let currentFilter = "Aucun";
 let currentFilterCss = "none";
 let compareMode = false;
 let compareSelection = [];
@@ -18,19 +18,19 @@ let customFilters = JSON.parse(localStorage.getItem("lumaFilters") || "[]");
 let albums = JSON.parse(localStorage.getItem("lumaAlbums") || "[]");
 
 const builtInFilters = [
-  ["None","none",{}],
+  ["Aucun","none",{}],
   ["Clean","brightness(1.05) contrast(.96) saturate(.94)",{}],
-  ["Sunday","brightness(1.06) contrast(.90) saturate(.88) sepia(.06)",{}],
-  ["Golden","brightness(1.02) contrast(.96) saturate(1.08) sepia(.16)",{}],
+  ["Dimanche","brightness(1.06) contrast(.90) saturate(.88) sepia(.06)",{}],
+  ["Doré","brightness(1.02) contrast(.96) saturate(1.08) sepia(.16)",{}],
   ["Digicam","contrast(1.12) saturate(1.10) brightness(1.01)",{grain:12}],
-  ["Cozy","brightness(.98) contrast(.91) saturate(.86) sepia(.18)",{}],
+  ["Cocooning","brightness(.98) contrast(.91) saturate(.86) sepia(.18)",{}],
   ["City","contrast(1.10) saturate(.88) brightness(.98)",{}],
   ["Flash","brightness(1.12) contrast(1.08) saturate(.92)",{}],
-  ["Soft","brightness(1.08) contrast(.84) saturate(.90) blur(.25px)",{}],
+  ["Doux","brightness(1.08) contrast(.84) saturate(.90) blur(.25px)",{}],
   ["Film","contrast(.94) saturate(.78) sepia(.12)",{grain:16,fade:8}],
   ["Vintage","brightness(.98) contrast(.9) saturate(.72) sepia(.22)",{grain:28,fade:12,vignette:16}],
-  ["Night","brightness(.90) contrast(1.18) saturate(.82)",{}],
-  ["Euro Summer","brightness(1.05) contrast(.95) saturate(1.17) sepia(.07)",{}],
+  ["Nuit","brightness(.90) contrast(1.18) saturate(.82)",{}],
+  ["Été européen","brightness(1.05) contrast(.95) saturate(1.17) sepia(.07)",{}],
   ["Old Money","brightness(1.02) contrast(.94) saturate(.78) sepia(.13)",{grain:8}],
   ["Model Off Duty","contrast(1.12) saturate(.73) brightness(.96)",{}],
   ["Angel","brightness(1.13) contrast(.82) saturate(.88) blur(.35px)",{}]
@@ -59,7 +59,7 @@ function renderKeypad() {
         $("#app").classList.remove("hidden");
         await startCamera();
       } else {
-        $("#lockMessage").textContent = "Wrong code";
+        $("#lockMessage").textContent = "Code incorrect";
         code = "";
         setTimeout(()=>{ $("#lockMessage").textContent=""; drawDots(); },700);
       }
@@ -82,7 +82,7 @@ async function startCamera() {
     $("#cameraError").classList.add("hidden");
     await renderZoom();
   } catch (e) {
-    $("#cameraError").textContent = "Camera unavailable. Check Safari camera permission and reopen the app.";
+    $("#cameraError").textContent = "Caméra indisponible. Vérifie l’autorisation caméra dans Safari puis rouvre l’app.";
     $("#cameraError").classList.remove("hidden");
   }
 }
@@ -142,22 +142,67 @@ function renderFilters() {
   });
 }
 
-function val(id){ return +$("#"+id).value; }
-function customCss() {
-  const exposure = 1 + val("fExposure")/250;
-  const brightness = 1 + val("fBrightness")/300;
-  const contrast = 1 + val("fContrast")/250;
-  const sat = 1 + val("fSaturation")/180;
-  const brilliance = val("fBrilliance");
-  const vibrance = val("fVibrance");
-  const warmth = val("fWarmth");
-  const tint = val("fTint");
-  const highlights = val("fHighlights");
-  const shadows = val("fShadows");
-  const blackPoint = val("fBlackPoint");
-  const fade = val("fFade");
 
-  const sepia = Math.max(0, warmth)/450;
+const adjustmentDefs = [
+  {id:"exposure", name:"Exposition", icon:"☀", min:-100, max:100, value:0},
+  {id:"brilliance", name:"Brillance", icon:"✦", min:-100, max:100, value:0},
+  {id:"highlights", name:"Hautes lumières", icon:"◐", min:-100, max:100, value:0},
+  {id:"shadows", name:"Ombres", icon:"◑", min:-100, max:100, value:0},
+  {id:"contrast", name:"Contraste", icon:"◒", min:-100, max:100, value:0},
+  {id:"brightness", name:"Luminosité", icon:"◉", min:-100, max:100, value:0},
+  {id:"blackPoint", name:"Point noir", icon:"●", min:0, max:100, value:0},
+  {id:"saturation", name:"Saturation", icon:"◈", min:-100, max:100, value:0},
+  {id:"vibrance", name:"Éclat", icon:"✺", min:-100, max:100, value:0},
+  {id:"warmth", name:"Chaleur", icon:"♨", min:-100, max:100, value:0},
+  {id:"tint", name:"Teinte", icon:"◌", min:-100, max:100, value:0},
+  {id:"sharpness", name:"Netteté", icon:"⌁", min:0, max:100, value:0},
+  {id:"definition", name:"Définition", icon:"◇", min:0, max:100, value:0},
+  {id:"noise", name:"Réduction du bruit", icon:"≈", min:0, max:100, value:0},
+  {id:"vignette", name:"Vignettage", icon:"◎", min:0, max:100, value:0},
+  {id:"grain", name:"Grain", icon:"⠿", min:0, max:100, value:0},
+  {id:"fade", name:"Fondu", icon:"◍", min:0, max:100, value:0}
+];
+let adjustmentValues = Object.fromEntries(adjustmentDefs.map(d=>[d.id,d.value]));
+let activeAdjustmentId = "exposure";
+
+function renderAdjustmentStrip(){
+  const strip = $("#adjustmentStrip");
+  if(!strip) return;
+  strip.innerHTML = adjustmentDefs.map(d=>`
+    <button class="adjustment-item ${d.id===activeAdjustmentId?"active":""}" data-adjust="${d.id}">
+      <span class="adjustment-icon">${d.icon}</span>
+      <span class="adjustment-label">${d.name}</span>
+      <span class="adjustment-mini-value">${adjustmentValues[d.id]}</span>
+    </button>`).join("");
+  $$("[data-adjust]").forEach(b=>b.onclick=()=>{
+    activeAdjustmentId=b.dataset.adjust;
+    syncActiveAdjustment();
+    renderAdjustmentStrip();
+  });
+}
+function syncActiveAdjustment(){
+  const def=adjustmentDefs.find(d=>d.id===activeAdjustmentId);
+  $("#activeAdjustmentName").textContent=def.name;
+  $("#activeAdjustmentValue").textContent=adjustmentValues[def.id];
+  const s=$("#activeAdjustmentSlider");
+  s.min=def.min; s.max=def.max; s.value=adjustmentValues[def.id];
+}
+function av(id){ return +adjustmentValues[id] || 0; }
+
+function customCss() {
+  const exposure = 1 + av("exposure")/250;
+  const brightness = 1 + av("brightness")/300;
+  const contrast = 1 + av("contrast")/250;
+  const sat = 1 + av("saturation")/180;
+  const brilliance = av("brilliance");
+  const vibrance = av("vibrance");
+  const warmth = av("warmth");
+  const tint = av("tint");
+  const highlights = av("highlights");
+  const shadows = av("shadows");
+  const blackPoint = av("blackPoint");
+  const fade = av("fade");
+  const sepia = Math.max(0, warmth)/420;
   const hue = tint/4;
   const softContrast = 1 + (brilliance/600) + (blackPoint/500) - (fade/500);
   const finalBrightness = exposure * brightness * (1 + shadows/700) * (1 - highlights/1200);
@@ -166,9 +211,8 @@ function customCss() {
 }
 function customFx() {
   return {
-    grain:val("fGrain"), vignette:val("fVignette"), sharpness:val("fSharpness"),
-    definition:val("fDefinition"), noise:val("fNoise"), fade:val("fFade"),
-    warmth:val("fWarmth")
+    grain:av("grain"), vignette:av("vignette"), sharpness:av("sharpness"),
+    definition:av("definition"), noise:av("noise"), fade:av("fade"), warmth:av("warmth")
   };
 }
 function updateFilterPreview() {
@@ -179,7 +223,11 @@ function updateFilterPreview() {
   if(fx.warmth>0) bg.push(`linear-gradient(rgba(255,133,70,${(fx.warmth/900).toFixed(3)}),rgba(255,133,70,${(fx.warmth/900).toFixed(3)}))`);
   else if(fx.warmth<0) bg.push(`linear-gradient(rgba(70,120,255,${(-fx.warmth/1100).toFixed(3)}),rgba(70,120,255,${(-fx.warmth/1100).toFixed(3)}))`);
   $("#filterPreviewFx").style.background=bg.join(",");
-  $("#filterPreviewFx").style.opacity = fx.grain ? Math.min(.35,fx.grain/280) : 1;
+}
+function resetAdjustments(){
+  adjustmentDefs.forEach(d=>adjustmentValues[d.id]=d.value);
+  activeAdjustmentId="exposure";
+  renderAdjustmentStrip(); syncActiveAdjustment(); updateFilterPreview();
 }
 
 function renderAlbums() {
@@ -248,7 +296,7 @@ function addPhoto(data) {
 function openViewer(i){
   currentViewerIndex=i;
   $("#viewerImage").src=galleryItems[i].data;
-  $("#viewerFavorite").textContent=galleryItems[i].favorite?"♥ Favorited":"♡ Favorite";
+  $("#viewerFavorite").textContent=galleryItems[i].favorite?"♥ Favori":"♡ Favorite";
   $("#viewerOverlay").classList.remove("hidden");
 }
 function closeViewer(){$("#viewerOverlay").classList.add("hidden");currentViewerIndex=null;}
@@ -316,11 +364,11 @@ function openAlbumModal(mode){
   $("#albumOverlay").classList.remove("hidden");
   $("#albumNameInput").value="";
   if(mode==="create"){
-    $("#albumOverlayTitle").textContent="New album";
+    $("#albumOverlayTitle").textContent="Nouvel album";
     $("#albumNameInput").classList.remove("hidden");
     $("#albumChoices").classList.add("hidden");
   } else {
-    $("#albumOverlayTitle").textContent="Add to album";
+    $("#albumOverlayTitle").textContent="Ajouter à un album";
     $("#albumNameInput").classList.add("hidden");
     $("#albumChoices").classList.remove("hidden");
     $("#albumChoices").innerHTML=albums.length?albums.map(a=>`<button class="album-choice" data-choice="${a.id}">${a.name} <span>＋</span></button>`).join(""):`<div class="muted">Create an album first.</div>`;
@@ -347,37 +395,6 @@ function bind() {
   $("#removeTraceBtn").onclick=()=>{$("#traceImage").src="";$("#traceImage").classList.add("hidden");$("#traceOpacityWrap").classList.add("hidden");$("#removeTraceBtn").classList.add("hidden");$("#traceInput").value="";};
   $("#cameraView .camera-stage").addEventListener("click",focusAt);
 
-  // '+' now opens the real device photo picker
-  $("#galleryImportBtn").onclick=()=>$("#galleryInput").click();
-  $("#galleryInput").onchange=e=>[...e.target.files].forEach(f=>{const r=new FileReader();r.onload=()=>addPhoto(r.result);r.readAsDataURL(f);});
-
-  $("#editFiltersBtn").onclick=()=>activateView("filtersView");
-
-  ["fExposure","fBrilliance","fHighlights","fShadows","fContrast","fBrightness","fBlackPoint","fSaturation","fVibrance","fWarmth","fTint","fSharpness","fDefinition","fNoise","fVignette","fGrain","fFade"].forEach(id=>$("#"+id).oninput=updateFilterPreview);
-
-  $("#saveFilterBtn").onclick=()=>{
-    const name=$("#customFilterName").value.trim()||"My filter";
-    customFilters.push({name,css:customCss(),fx:customFx()});
-    localStorage.setItem("lumaFilters",JSON.stringify(customFilters));
-    $("#customFilterName").value="";renderFilters();
-  };
-
-  $("#compareModeBtn").onclick=()=>{compareMode=!compareMode;compareSelection=[];$("#compareModeBtn").textContent=compareMode?"Pick A + B":"Compare";renderGallery();};
-  $("#closeCompare").onclick=()=>{$("#compareOverlay").classList.add("hidden");compareSelection=[];compareMode=false;$("#compareModeBtn").textContent="Compare";renderGallery();};
-
-  $("#newAlbumBtn").onclick=()=>openAlbumModal("create");
-  $("#cancelAlbumBtn").onclick=()=>$("#albumOverlay").classList.add("hidden");
-  $("#confirmAlbumBtn").onclick=()=>{
-    if(pendingAlbumMode!=="create")return;
-    const name=$("#albumNameInput").value.trim();if(!name)return;
-    albums.push({id:"a"+Date.now(),name});saveAlbums();$("#albumOverlay").classList.add("hidden");
-  };
-
-  $$(".gallery-tab").forEach(b=>b.onclick=()=>{
-    $$(".gallery-tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");
-    galleryFilter=b.dataset.galleryFilter;renderGallery();
-  });
-
   $("#closeViewer").onclick=closeViewer;
   $("#viewerFavorite").onclick=()=>{
     if(currentViewerIndex===null)return;
@@ -398,12 +415,12 @@ function activateView(id) {
 }
 
 async function forceFreshV3() {
-  if (sessionStorage.getItem("lumaCacheResetV3") === "1") return;
-  sessionStorage.setItem("lumaCacheResetV3","1");
+  if (sessionStorage.getItem("lumaCacheResetV4") === "1") return;
+  sessionStorage.setItem("lumaCacheResetV4","1");
   try {
     if ("caches" in window) {
       const keys = await caches.keys();
-      await Promise.all(keys.filter(k => k !== "luma-v3").map(k => caches.delete(k)));
+      await Promise.all(keys.filter(k => k !== "luma-v4").map(k => caches.delete(k)));
     }
     if ("serviceWorker" in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
@@ -416,10 +433,10 @@ async function forceFreshV3() {
 
 function boot() {
   forceFreshV3();
-  renderKeypad();renderFilters();renderGallery();bind();updateFilterPreview();
+  renderKeypad();renderFilters();renderGallery();renderAdjustmentStrip();syncActiveAdjustment();bind();updateFilterPreview();
   if(sessionStorage.getItem("lumaUnlocked")==="1"){$("#lockScreen").classList.add("hidden");$("#app").classList.remove("hidden");startCamera();}
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js?v=3").then(reg => {
+    navigator.serviceWorker.register("sw.js?v=4").then(reg => {
       reg.update().catch(()=>{});
     }).catch(()=>{});
   }

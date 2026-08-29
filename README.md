@@ -49,3 +49,12 @@ PWA pensée pour iPhone / GitHub Pages.
 - supprime les anciens caches Luma
 - service worker en network-first sur index/CSS/JS
 - numéro `v2.1` visible à côté du logo pour vérifier que la bonne version est chargée
+
+## V2.2
+- suppression du bouton + en bas à gauche de la caméra
+- app verrouillée à la hauteur de l'écran : plus de scroll global de la page
+- seuls la galerie et certains panneaux internes peuvent défiler
+- interface des réglages refaite façon Photos iPhone
+- réglages traduits en français
+- un seul curseur actif à la fois avec bande horizontale de réglages
+- affichage v2.2 à côté de Luma pour vérifier la version
