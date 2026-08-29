@@ -327,3 +327,178 @@ body{touch-action:manipulation}
   .adjustment-strip{gap:7px!important}
   .active-adjustment{padding:8px 10px!important}
 }
+
+
+/* V2.5 */
+.camera-only-hidden{
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+
+#filtersView.active{
+  display:flex!important;
+  flex-direction:column;
+  min-height:0;
+}
+#filtersView > .section-head{
+  padding:7px 4px 7px!important;
+  flex:0 0 auto;
+}
+#filtersView > .section-head h2{font-size:21px!important}
+#filtersView > .section-head .muted{display:none}
+
+#filtersView .editor-card{
+  flex:1 1 auto;
+  height:100%;
+  min-height:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:8px!important;
+  padding:10px 12px 11px!important;
+  overflow:hidden!important;
+  border-radius:24px!important;
+}
+
+.filter-preview-shell{
+  flex:1 1 auto;
+  min-height:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+
+#filtersView .preview-wrap{
+  position:relative!important;
+  flex:0 1 auto;
+  width:min(calc(100vw - 50px),340px)!important;
+  height:auto!important;
+  aspect-ratio:1/1!important;
+  min-height:0!important;
+  max-height:min(42dvh,340px)!important;
+  max-width:100%!important;
+  border-radius:24px!important;
+  overflow:hidden!important;
+  background:#171313!important;
+  box-shadow:0 12px 32px rgba(60,43,39,.12);
+}
+
+#filtersView #filterPreview{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  object-position:center!important;
+  background:#171313!important;
+}
+
+#filtersView #filterPreviewFx{
+  position:absolute!important;
+  inset:0!important;
+}
+
+.filter-name-row{
+  flex:0 0 auto;
+  display:grid!important;
+  grid-template-columns:42px minmax(0,1fr);
+  align-items:center;
+  gap:8px;
+  margin:0!important;
+  font-size:11px!important;
+}
+.filter-name-row #customFilterName{
+  margin:0!important;
+  min-height:36px;
+  padding:8px 11px!important;
+}
+
+#filtersView .apple-adjustments{
+  flex:0 0 auto;
+  width:100%;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:5px!important;
+  overflow:hidden!important;
+}
+
+#filtersView .adjustment-strip{
+  flex:0 0 auto;
+  width:100%;
+  max-width:100%;
+  min-height:62px;
+  display:flex;
+  gap:7px!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-x;
+  flex-wrap:nowrap!important;
+  scrollbar-width:none;
+  padding:0 28px 3px 0!important;
+}
+#filtersView .adjustment-strip::-webkit-scrollbar{display:none}
+
+#filtersView .adjustment-item{
+  height:59px!important;
+  flex:0 0 62px!important;
+  min-width:62px!important;
+  border-radius:15px!important;
+  grid-template-rows:20px 1fr 11px!important;
+  padding:5px 3px!important;
+}
+#filtersView .adjustment-icon{font-size:15px!important}
+#filtersView .adjustment-label{font-size:8px!important}
+#filtersView .adjustment-mini-value{font-size:8px!important}
+
+#filtersView .active-adjustment{
+  flex:0 0 auto;
+  padding:7px 10px!important;
+  border-radius:15px!important;
+}
+#filtersView .adjustment-head{
+  margin-bottom:3px!important;
+  font-size:11px!important;
+}
+
+#filtersView .filter-save-btn{
+  position:relative!important;
+  z-index:4;
+  flex:0 0 41px!important;
+  min-height:41px!important;
+  max-height:41px!important;
+  width:100%!important;
+  margin:0!important;
+  padding:0 14px!important;
+  border-radius:15px!important;
+}
+
+@media (min-height:800px){
+  #filtersView .preview-wrap{
+    width:min(calc(100vw - 46px),355px)!important;
+    max-height:min(44dvh,355px)!important;
+  }
+}
+
+@media (max-height:700px){
+  #filtersView > .section-head{padding:3px 4px 4px!important}
+  #filtersView > .section-head h2{font-size:18px!important}
+  #filtersView .editor-card{gap:5px!important;padding:7px 9px 8px!important}
+  #filtersView .preview-wrap{
+    width:min(calc(100vw - 68px),235px)!important;
+    max-height:235px!important;
+  }
+  #filtersView .adjustment-strip{min-height:50px!important}
+  #filtersView .adjustment-item{
+    height:49px!important;
+    flex-basis:56px!important;
+    min-width:56px!important;
+  }
+  #filtersView .active-adjustment{padding:5px 8px!important}
+  #filtersView .filter-save-btn{
+    flex-basis:37px!important;
+    min-height:37px!important;
+    max-height:37px!important;
+  }
+}

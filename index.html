@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Luma" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-180.png" />
-  <link rel="stylesheet" href="styles.css?v=6" />
+  <link rel="stylesheet" href="styles.css?v=7" />
   <title>Luma Camera</title>
 </head>
 <body>
@@ -27,7 +27,7 @@
   <div id="app" class="screen app hidden">
     <header class="topbar">
       <button id="gridBtn" class="icon-btn">#</button>
-      <div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v2.4</span></div>
+      <div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v2.5</span></div>
       <button id="switchBtn" class="icon-btn switch-camera" aria-label="Retourner la caméra">⇄</button>
     </header>
 
@@ -101,11 +101,17 @@
         </div>
 
         <div class="editor-card">
-          <label>Nom
+          <div class="filter-preview-shell">
+            <div class="preview-wrap">
+              <video id="filterPreview" autoplay muted playsinline></video>
+              <div id="filterPreviewFx" class="filter-preview-fx"></div>
+            </div>
+          </div>
+
+          <label class="filter-name-row">Nom
             <input id="customFilterName" maxlength="24" placeholder="mon filtre" />
           </label>
 
-          
           <div class="apple-adjustments">
             <div id="adjustmentStrip" class="adjustment-strip"></div>
             <div class="active-adjustment">
@@ -117,12 +123,8 @@
             </div>
           </div>
 
-          <div class="preview-wrap">
-            <video id="filterPreview" autoplay muted playsinline></video>
-            <div id="filterPreviewFx" class="filter-preview-fx"></div>
-          </div>
-          <button id="saveFilterBtn" class="primary-btn">Enregistrer le filtre</button>
-        </div>
+          <button id="saveFilterBtn" class="primary-btn filter-save-btn">Enregistrer le filtre</button>
+</div>
 
         <div class="section-head second">
           <div><h2>Mes filtres</h2></div>
@@ -179,6 +181,6 @@
 
   <div id="shutterFlash" class="shutter-flash"></div>
 <canvas id="canvas" hidden></canvas>
-  <script src="app.js?v=6"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>

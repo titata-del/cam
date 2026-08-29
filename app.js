@@ -489,21 +489,31 @@ function bind() {
 function activateView(id) {
   $$(".view").forEach(v=>v.classList.toggle("active",v.id===id));
   $$(".tab").forEach(t=>t.classList.toggle("active",t.dataset.view===id));
+
+  const isCamera = id === "cameraView";
+  $("#gridBtn").classList.toggle("camera-only-hidden", !isCamera);
+  $("#switchBtn").classList.toggle("camera-only-hidden", !isCamera);
+
   if(id==="filtersView") {
     renderAdjustmentStrip();
     syncActiveAdjustment();
     updateFilterPreview();
-    setTimeout(()=>{ if(stream){ $("#filterPreview").srcObject=stream; $("#filterPreview").play().catch(()=>{}); } },30);
+    setTimeout(()=>{
+      if(stream){
+        $("#filterPreview").srcObject=stream;
+        $("#filterPreview").play().catch(()=>{});
+      }
+    },30);
   }
 }
 
 async function forceFreshV3() {
-  if (sessionStorage.getItem("lumaCacheResetV6") === "1") return;
-  sessionStorage.setItem("lumaCacheResetV6","1");
+  if (sessionStorage.getItem("lumaCacheResetV7") === "1") return;
+  sessionStorage.setItem("lumaCacheResetV7","1");
   try {
     if ("caches" in window) {
       const keys = await caches.keys();
-      await Promise.all(keys.filter(k => k !== "luma-v6").map(k => caches.delete(k)));
+      await Promise.all(keys.filter(k => k !== "luma-v7").map(k => caches.delete(k)));
     }
     if ("serviceWorker" in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
@@ -516,10 +526,10 @@ async function forceFreshV3() {
 
 function boot() {
   forceFreshV3();
-  renderKeypad();renderFilters();renderGallery();renderAdjustmentStrip();syncActiveAdjustment();bind();updateFilterPreview();
+  renderKeypad();renderFilters();renderGallery();renderAdjustmentStrip();syncActiveAdjustment();bind();updateFilterPreview();activateView("cameraView");
   if(sessionStorage.getItem("lumaUnlocked")==="1"){$("#lockScreen").classList.add("hidden");$("#app").classList.remove("hidden");startCamera();}
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js?v=6").then(reg => {
+    navigator.serviceWorker.register("sw.js?v=7").then(reg => {
       reg.update().catch(()=>{});
     }).catch(()=>{});
   }

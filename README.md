@@ -71,3 +71,10 @@ PWA pensée pour iPhone / GitHub Pages.
 - rend toute la bande des réglages accessible au swipe horizontal sur iPhone
 - preview caméra de l’éditeur forcée en object-fit: cover sans bande noire
 - activation de l’éditeur relance explicitement la preview vidéo
+
+## V2.5
+- Grille et inversion visibles uniquement dans Caméra
+- grande preview carrée dans Créer un filtre
+- disposition plus proche de Photos iPhone
+- réglages sous l'image sans chevauchement
+- bouton Enregistrer toujours accessible
