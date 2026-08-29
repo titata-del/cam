@@ -689,13 +689,6 @@ function bind() {
   $("#gridBtn").onclick=()=>$("#grid").classList.toggle("hidden");
   $("#switchBtn").onclick=async()=>{facingMode=facingMode==="environment"?"user":"environment";await startCamera();};
   $("#shutterBtn").onclick=takePhotoWithTimer;
-  $("#editFiltersBtn").onclick=()=>{
-    editingCustomFilterIndex=null;
-    $("#customFilterName").value="";
-    $("#saveFilterBtn").textContent=(translations[appLanguage]||translations.fr).saveFilter;
-    resetAdjustments();
-    activateView("filtersView");
-  };
 
   // Calque / photo de référence
   $("#traceInput").onchange=e=>{
@@ -853,12 +846,12 @@ function activateView(id) {
 }
 
 async function forceFreshV3() {
-  if (sessionStorage.getItem("lumaCacheResetV14") === "1") return;
-  sessionStorage.setItem("lumaCacheResetV14","1");
+  if (sessionStorage.getItem("lumaCacheResetV15") === "1") return;
+  sessionStorage.setItem("lumaCacheResetV15","1");
   try {
     if ("caches" in window) {
       const keys = await caches.keys();
-      await Promise.all(keys.filter(k => k !== "luma-v14").map(k => caches.delete(k)));
+      await Promise.all(keys.filter(k => k !== "luma-v15").map(k => caches.delete(k)));
     }
     if ("serviceWorker" in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
@@ -874,7 +867,7 @@ function boot() {
   renderKeypad();renderFilters();renderGallery();renderAdjustmentStrip();syncActiveAdjustment();bind();updateFilterPreview();activateView("cameraView");applyAppearance();applyLanguage();
   if(sessionStorage.getItem("lumaUnlocked")==="1"){$("#lockScreen").classList.add("hidden");$("#app").classList.remove("hidden");startCamera();}
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js?v=14").then(reg => {
+    navigator.serviceWorker.register("sw.js?v=15").then(reg => {
       reg.update().catch(()=>{});
     }).catch(()=>{});
   }
