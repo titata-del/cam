@@ -18,10 +18,14 @@ let zoomIndicatorTimer = null;
 let appAppearance = localStorage.getItem("lumaAppearance") || "system";
 let appLanguage = localStorage.getItem("lumaLanguage") || "fr";
 let editingCustomFilterIndex = null;
+let timerSeconds = 0;
+let currentRatio = "4:3";
+let cameraExposureValue = 0;
+let filterIntensityValue = 100;
 
 const translations = {
-  fr:{settings:"Réglages",appearance:"Apparence",language:"Langue",auto:"Auto",light:"Clair",dark:"Sombre",camera:"Caméra",gallery:"Galerie",filters:"Filtres",compare:"Comparer",all:"Toutes",favorites:"Favoris",albums:"Albums",createFilter:"Créer un filtre",saveFilter:"Enregistrer le filtre",myFilters:"Mes filtres"},
-  en:{settings:"Settings",appearance:"Appearance",language:"Language",auto:"Auto",light:"Light",dark:"Dark",camera:"Camera",gallery:"Gallery",filters:"Filters",compare:"Compare",all:"All",favorites:"Favorites",albums:"Albums",createFilter:"Create a filter",saveFilter:"Save filter",myFilters:"My filters"}
+  fr:{settings:"Réglages",expo:"Expo",filter:"Filtre",appearance:"Apparence",language:"Langue",auto:"Auto",light:"Clair",dark:"Sombre",camera:"Caméra",gallery:"Galerie",filters:"Filtres",compare:"Comparer",all:"Toutes",favorites:"Favoris",albums:"Albums",createFilter:"Créer un filtre",saveFilter:"Enregistrer le filtre",myFilters:"Mes filtres"},
+  en:{settings:"Settings",expo:"Exposure",filter:"Filter",appearance:"Appearance",language:"Language",auto:"Auto",light:"Light",dark:"Dark",camera:"Camera",gallery:"Gallery",filters:"Filters",compare:"Compare",all:"All",favorites:"Favorites",albums:"Albums",createFilter:"Create a filter",saveFilter:"Save filter",myFilters:"My filters"}
 };
 
 let galleryItems = JSON.parse(localStorage.getItem("lumaGallery") || "[]");
@@ -85,6 +89,8 @@ function applyLanguage(){
     ? (appLanguage==="en"?"Update filter":"Mettre à jour le filtre")
     : t.saveFilter;
   const mft=$("#myFiltersTitle"); if(mft)mft.textContent=t.myFilters;
+  const el=$("#exposureLabel"); if(el)el.textContent=t.expo;
+  const il=$("#intensityLabel"); if(il)il.textContent=t.filter;
   renderAdjustmentStrip(); syncActiveAdjustment();
 
   $$("[data-language]").forEach(b=>b.classList.toggle("active", b.dataset.language===appLanguage));
@@ -148,6 +154,86 @@ function bindPinchZoom(){
   stage.addEventListener("touchend", e=>{
     if(e.touches.length<2)pinchState=null;
   },{passive:false});
+}
+
+
+
+function mixFilterCss(css, intensity){
+  if(!css || css==="none" || intensity<=0) return "none";
+  if(intensity>=100) return css;
+
+  // Approximation simple : on module les valeurs principales autour du neutre.
+  const t=intensity/100;
+  return css
+    .replace(/brightness\(([\d.]+)\)/g, (_,v)=>`brightness(${(1+(+v-1)*t).toFixed(3)})`)
+    .replace(/contrast\(([\d.]+)\)/g, (_,v)=>`contrast(${(1+(+v-1)*t).toFixed(3)})`)
+    .replace(/saturate\(([\d.]+)\)/g, (_,v)=>`saturate(${(1+(+v-1)*t).toFixed(3)})`)
+    .replace(/sepia\(([\d.]+)\)/g, (_,v)=>`sepia(${(+v*t).toFixed(3)})`)
+    .replace(/blur\(([\d.]+)px\)/g, (_,v)=>`blur(${(+v*t).toFixed(3)}px)`)
+    .replace(/hue-rotate\(([-\d.]+)deg\)/g, (_,v)=>`hue-rotate(${(+v*t).toFixed(2)}deg)`);
+}
+
+function currentLiveFilter(){
+  return mixFilterCss(currentFilterCss, filterIntensityValue);
+}
+
+function applyLiveFilter(){
+  $("#video").style.filter=currentLiveFilter();
+}
+
+async function applyCameraExposure(value){
+  cameraExposureValue=+value;
+  if(!stream) return;
+  const track=stream.getVideoTracks()[0];
+  const caps=track.getCapabilities?track.getCapabilities():{};
+  if(caps.exposureCompensation){
+    const min=caps.exposureCompensation.min ?? -2;
+    const max=caps.exposureCompensation.max ?? 2;
+    const target=min+(cameraExposureValue+100)/200*(max-min);
+    try{
+      await track.applyConstraints({advanced:[{exposureCompensation:target}]});
+    }catch(e){}
+  }else{
+    // Fallback visuel si Safari ne donne pas l'exposition matérielle.
+    const extra=1+cameraExposureValue/350;
+    $("#video").style.opacity=Math.max(.55,Math.min(1.15,extra));
+  }
+}
+
+function cycleTimer(){
+  const values=[0,3,5,10];
+  const i=values.indexOf(timerSeconds);
+  timerSeconds=values[(i+1)%values.length];
+  $("#timerBtn").textContent=`⏱ ${timerSeconds}s`;
+}
+
+function applyRatio(){
+  const stage=$(".camera-stage");
+  stage.dataset.ratio=currentRatio;
+  $("#ratioBtn").textContent=currentRatio;
+}
+
+function cycleRatio(){
+  const values=["4:3","1:1","16:9","Plein"];
+  const i=values.indexOf(currentRatio);
+  currentRatio=values[(i+1)%values.length];
+  applyRatio();
+}
+
+async function takePhotoWithTimer(){
+  if(timerSeconds<=0){
+    capture();
+    return;
+  }
+  const overlay=$("#countdownOverlay");
+  overlay.classList.remove("hidden");
+  for(let n=timerSeconds;n>0;n--){
+    overlay.textContent=n;
+    await new Promise(r=>setTimeout(r,1000));
+  }
+  overlay.textContent="✦";
+  capture();
+  setTimeout(()=>overlay.classList.add("hidden"),250);
 }
 
 
@@ -295,7 +381,7 @@ function renderFilters() {
     const b=document.createElement("button");
     b.className="filter-chip"+(name===currentFilter?" active":"");
     b.textContent=name;
-    b.onclick=()=>{currentFilter=name;currentFilterCss=css;$("#video").style.filter=css;renderFilters();};
+    b.onclick=()=>{currentFilter=name;currentFilterCss=css;currentFilterCss=css;applyLiveFilter();renderFilters();};
     strip.appendChild(b);
   });
   $("#myFilters").innerHTML = customFilters.length
@@ -510,7 +596,7 @@ function capture() {
   canvas.width=video.videoWidth;canvas.height=video.videoHeight;
   const ctx=canvas.getContext("2d");
   // Preview is mirrored for selfie, but saved photo should be natural/unmirrored.
-  ctx.filter=currentFilterCss||"none";
+  ctx.filter=currentLiveFilter()||"none";
   ctx.drawImage(video,0,0,canvas.width,canvas.height);
   ctx.filter="none";
 
@@ -568,6 +654,13 @@ function openAlbumModal(mode){
 }
 
 function bind() {
+  $("#timerBtn").onclick=cycleTimer;
+  $("#ratioBtn").onclick=cycleRatio;
+  $("#cameraExposure").oninput=e=>applyCameraExposure(e.target.value);
+  $("#filterIntensity").oninput=e=>{
+    filterIntensityValue=+e.target.value;
+    applyLiveFilter();
+  };
   bindPinchZoom();
   $("#settingsBtn").onclick=openSettings;
   $("#closeSettings").onclick=()=>$("#settingsOverlay").classList.add("hidden");
@@ -585,7 +678,7 @@ function bind() {
   // Camera controls
   $("#gridBtn").onclick=()=>$("#grid").classList.toggle("hidden");
   $("#switchBtn").onclick=async()=>{facingMode=facingMode==="environment"?"user":"environment";await startCamera();};
-  $("#shutterBtn").onclick=capture;
+  $("#shutterBtn").onclick=takePhotoWithTimer;
   $("#editFiltersBtn").onclick=()=>{
     editingCustomFilterIndex=null;
     $("#customFilterName").value="";
@@ -732,12 +825,12 @@ function activateView(id) {
 }
 
 async function forceFreshV3() {
-  if (sessionStorage.getItem("lumaCacheResetV11") === "1") return;
-  sessionStorage.setItem("lumaCacheResetV11","1");
+  if (sessionStorage.getItem("lumaCacheResetV12") === "1") return;
+  sessionStorage.setItem("lumaCacheResetV12","1");
   try {
     if ("caches" in window) {
       const keys = await caches.keys();
-      await Promise.all(keys.filter(k => k !== "luma-v11").map(k => caches.delete(k)));
+      await Promise.all(keys.filter(k => k !== "luma-v12").map(k => caches.delete(k)));
     }
     if ("serviceWorker" in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
@@ -750,10 +843,10 @@ async function forceFreshV3() {
 
 function boot() {
   forceFreshV3();
-  renderKeypad();renderFilters();renderGallery();renderAdjustmentStrip();syncActiveAdjustment();bind();updateFilterPreview();activateView("cameraView");applyAppearance();applyLanguage();
+  renderKeypad();renderFilters();renderGallery();renderAdjustmentStrip();syncActiveAdjustment();bind();updateFilterPreview();activateView("cameraView");applyAppearance();applyLanguage();applyRatio();
   if(sessionStorage.getItem("lumaUnlocked")==="1"){$("#lockScreen").classList.add("hidden");$("#app").classList.remove("hidden");startCamera();}
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js?v=11").then(reg => {
+    navigator.serviceWorker.register("sw.js?v=12").then(reg => {
       reg.update().catch(()=>{});
     }).catch(()=>{});
   }

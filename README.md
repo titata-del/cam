@@ -108,3 +108,10 @@ PWA pensée pour iPhone / GitHub Pages.
 - sauvegarde des réglages détaillés pour les nouveaux filtres
 - favoris de Mes filtres remontent en premier dans la barre de filtres caméra
 - suppression conservée
+
+## V3.0
+- retardateur 0 / 3 / 5 / 10 s
+- formats 4:3 / 1:1 / 16:9 / Plein
+- exposition directement dans la caméra
+- intensité du filtre directement dans la caméra
+- compte à rebours visuel avant déclenchement

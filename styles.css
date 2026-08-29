@@ -662,3 +662,65 @@ html,body{
 .filter-directory-main:active{
   opacity:.72;
 }
+
+/* V3.0 — commandes caméra */
+.camera-tools{
+  flex-wrap:wrap;
+  align-items:flex-start;
+}
+.tool-pill{
+  border:0;
+  cursor:pointer;
+}
+.camera-adjustments{
+  position:absolute;
+  left:12px;
+  right:12px;
+  bottom:126px;
+  z-index:4;
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  pointer-events:auto;
+}
+.camera-adjust-row{
+  display:grid;
+  grid-template-columns:42px 1fr;
+  align-items:center;
+  gap:8px;
+  min-height:30px;
+  padding:5px 9px;
+  border-radius:15px;
+  background:rgba(15,13,13,.30);
+  backdrop-filter:blur(14px);
+  color:white;
+  font-size:10px;
+}
+.camera-adjust-row input{
+  width:100%;
+}
+.countdown-overlay{
+  position:absolute;
+  inset:0;
+  z-index:15;
+  display:grid;
+  place-items:center;
+  font-size:82px;
+  font-weight:650;
+  color:white;
+  text-shadow:0 4px 22px rgba(0,0,0,.35);
+  background:rgba(0,0,0,.10);
+  pointer-events:none;
+}
+.camera-stage[data-ratio="1:1"] video{
+  object-fit:cover;
+}
+.camera-stage[data-ratio="16:9"] video{
+  object-fit:cover;
+}
+.camera-stage[data-ratio="Plein"]{
+  border-radius:0;
+}
+@media (max-height:720px){
+  .camera-adjustments{bottom:116px}
+}

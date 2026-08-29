@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Luma" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-180.png" />
-  <link rel="stylesheet" href="styles.css?v=11" />
+  <link rel="stylesheet" href="styles.css?v=12" />
   <title>Luma Camera</title>
 </head>
 <body>
@@ -27,7 +27,7 @@
   <div id="app" class="screen app hidden">
     <header class="topbar">
       <button id="gridBtn" class="icon-btn">#</button>
-      <div class="brand-wrap"><div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v2.9</span></div><button id="settingsBtn" class="settings-btn" aria-label="Réglages"><span class="settings-dots">•••</span></button></div>
+      <div class="brand-wrap"><div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v3.0</span></div><button id="settingsBtn" class="settings-btn" aria-label="Réglages"><span class="settings-dots">•••</span></button></div>
       <button id="switchBtn" class="icon-btn switch-camera" aria-label="Retourner la caméra">⇄</button>
     </header>
 
@@ -41,9 +41,13 @@
           </div>
           <div id="focusRing" class="focus-ring hidden"></div>
           <div id="zoomIndicator" class="zoom-indicator hidden">1×</div>
+          <div id="countdownOverlay" class="countdown-overlay hidden">3</div>
           <div id="cameraError" class="camera-error hidden"></div>
 
           <div class="camera-tools">
+            <button id="timerBtn" class="pill tool-pill" type="button">⏱ 0s</button>
+            <button id="ratioBtn" class="pill tool-pill" type="button">4:3</button>
+
             <label class="pill">
               Calque
               <input id="traceInput" type="file" accept="image/*" hidden />
@@ -55,6 +59,17 @@
           </div>
 
           
+
+          <div class="camera-adjustments">
+            <label class="camera-adjust-row">
+              <span id="exposureLabel">Expo</span>
+              <input id="cameraExposure" type="range" min="-100" max="100" value="0">
+            </label>
+            <label class="camera-adjust-row">
+              <span id="intensityLabel">Filtre</span>
+              <input id="filterIntensity" type="range" min="0" max="100" value="100">
+            </label>
+          </div>
 
           <div class="filter-strip-wrap">
             <div id="filterStrip" class="filter-strip"></div>
@@ -219,6 +234,6 @@
   </div>
 
   <canvas id="canvas" hidden></canvas>
-  <script src="app.js?v=11"></script>
+  <script src="app.js?v=12"></script>
 </body>
 </html>
