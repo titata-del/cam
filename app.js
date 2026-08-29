@@ -174,12 +174,33 @@ function renderAdjustmentStrip(){
       <span class="adjustment-label">${d.name}</span>
       <span class="adjustment-mini-value">${adjustmentValues[d.id]}</span>
     </button>`).join("");
+  setTimeout(syncAdjustmentScrollbar,0);
   $$("[data-adjust]").forEach(b=>b.onclick=()=>{
     activeAdjustmentId=b.dataset.adjust;
     syncActiveAdjustment();
     renderAdjustmentStrip();
   });
 }
+function syncAdjustmentScrollbar(){
+  const strip=$("#adjustmentStrip");
+  const bar=$("#adjustmentScroll");
+  if(!strip || !bar) return;
+  const maxScroll=Math.max(0, strip.scrollWidth-strip.clientWidth);
+  bar.disabled=maxScroll<=0;
+  bar.value=maxScroll ? Math.round((strip.scrollLeft/maxScroll)*100) : 0;
+}
+function bindAdjustmentScrollbar(){
+  const strip=$("#adjustmentStrip");
+  const bar=$("#adjustmentScroll");
+  if(!strip || !bar) return;
+  bar.oninput=()=>{
+    const maxScroll=Math.max(0, strip.scrollWidth-strip.clientWidth);
+    strip.scrollLeft=(+bar.value/100)*maxScroll;
+  };
+  strip.addEventListener("scroll", syncAdjustmentScrollbar, {passive:true});
+  window.addEventListener("resize", syncAdjustmentScrollbar);
+}
+
 function syncActiveAdjustment(){
   const def=adjustmentDefs.find(d=>d.id===activeAdjustmentId);
   $("#activeAdjustmentName").textContent=def.name;
@@ -383,6 +404,7 @@ function openAlbumModal(mode){
 }
 
 function bind() {
+  bindAdjustmentScrollbar();
   // Camera controls
   $("#gridBtn").onclick=()=>$("#grid").classList.toggle("hidden");
   $("#switchBtn").onclick=async()=>{facingMode=facingMode==="environment"?"user":"environment";await startCamera();};
@@ -491,8 +513,10 @@ function activateView(id) {
   $$(".tab").forEach(t=>t.classList.toggle("active",t.dataset.view===id));
 
   const isCamera = id === "cameraView";
+  const canSwitchCamera = id === "cameraView" || id === "filtersView";
+
   $("#gridBtn").classList.toggle("camera-only-hidden", !isCamera);
-  $("#switchBtn").classList.toggle("camera-only-hidden", !isCamera);
+  $("#switchBtn").classList.toggle("camera-only-hidden", !canSwitchCamera);
 
   if(id==="filtersView") {
     renderAdjustmentStrip();
@@ -503,17 +527,18 @@ function activateView(id) {
         $("#filterPreview").srcObject=stream;
         $("#filterPreview").play().catch(()=>{});
       }
+      syncAdjustmentScrollbar();
     },30);
   }
 }
 
 async function forceFreshV3() {
-  if (sessionStorage.getItem("lumaCacheResetV7") === "1") return;
-  sessionStorage.setItem("lumaCacheResetV7","1");
+  if (sessionStorage.getItem("lumaCacheResetV8") === "1") return;
+  sessionStorage.setItem("lumaCacheResetV8","1");
   try {
     if ("caches" in window) {
       const keys = await caches.keys();
-      await Promise.all(keys.filter(k => k !== "luma-v7").map(k => caches.delete(k)));
+      await Promise.all(keys.filter(k => k !== "luma-v8").map(k => caches.delete(k)));
     }
     if ("serviceWorker" in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
@@ -529,7 +554,7 @@ function boot() {
   renderKeypad();renderFilters();renderGallery();renderAdjustmentStrip();syncActiveAdjustment();bind();updateFilterPreview();activateView("cameraView");
   if(sessionStorage.getItem("lumaUnlocked")==="1"){$("#lockScreen").classList.add("hidden");$("#app").classList.remove("hidden");startCamera();}
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js?v=7").then(reg => {
+    navigator.serviceWorker.register("sw.js?v=8").then(reg => {
       reg.update().catch(()=>{});
     }).catch(()=>{});
   }

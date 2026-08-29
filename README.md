@@ -78,3 +78,10 @@ PWA pensée pour iPhone / GitHub Pages.
 - disposition plus proche de Photos iPhone
 - réglages sous l'image sans chevauchement
 - bouton Enregistrer toujours accessible
+
+## V2.6 — base gelée
+- curseur visible pour parcourir tous les réglages sur ordinateur
+- synchronisation du curseur avec le scroll horizontal tactile
+- bouton Retourner la caméra disponible dans Caméra et Filtres
+- bouton Grille uniquement dans Caméra
+- version prévue comme base stable avant ajout des nouvelles fonctions

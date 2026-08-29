@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Luma" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-180.png" />
-  <link rel="stylesheet" href="styles.css?v=7" />
+  <link rel="stylesheet" href="styles.css?v=8" />
   <title>Luma Camera</title>
 </head>
 <body>
@@ -27,7 +27,7 @@
   <div id="app" class="screen app hidden">
     <header class="topbar">
       <button id="gridBtn" class="icon-btn">#</button>
-      <div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v2.5</span></div>
+      <div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v2.6</span></div>
       <button id="switchBtn" class="icon-btn switch-camera" aria-label="Retourner la caméra">⇄</button>
     </header>
 
@@ -113,7 +113,10 @@
           </label>
 
           <div class="apple-adjustments">
-            <div id="adjustmentStrip" class="adjustment-strip"></div>
+            <div class="adjustment-strip-wrap">
+              <div id="adjustmentStrip" class="adjustment-strip"></div>
+              <input id="adjustmentScroll" class="adjustment-scroll" type="range" min="0" max="100" value="0" aria-label="Défilement des réglages">
+            </div>
             <div class="active-adjustment">
               <div class="adjustment-head">
                 <span id="activeAdjustmentName">Exposition</span>
@@ -181,6 +184,6 @@
 
   <div id="shutterFlash" class="shutter-flash"></div>
 <canvas id="canvas" hidden></canvas>
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>
