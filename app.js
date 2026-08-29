@@ -22,13 +22,10 @@ let timerSeconds = 0;
 let cameraExposureValue = 0;
 let gallerySelectMode = false;
 let galleryBulkSelection = new Set();
-let viewerEditFilterName = "Aucun";
-let viewerEditFilterCss = "none";
-let viewerOriginalData = null;
 
 const translations = {
-  fr:{settings:"Réglages",expo:"Exposition",filter:"Intensité",select:"Sélectionner",delete:"Supprimer",edit:"Retoucher",cancel:"Annuler",save:"Enregistrer",holdOriginal:"Maintiens la photo pour voir l’originale",appearance:"Apparence",language:"Langue",auto:"Auto",light:"Clair",dark:"Sombre",camera:"Caméra",gallery:"Galerie",filters:"Filtres",compare:"Comparer",all:"Toutes",favorites:"Favoris",albums:"Albums",createFilter:"Créer un filtre",saveFilter:"Enregistrer le filtre",myFilters:"Mes filtres"},
-  en:{settings:"Settings",expo:"Exposure",filter:"Intensity",select:"Select",delete:"Delete",edit:"Edit",cancel:"Cancel",save:"Save",holdOriginal:"Hold the photo to see the original",appearance:"Appearance",language:"Language",auto:"Auto",light:"Light",dark:"Dark",camera:"Camera",gallery:"Gallery",filters:"Filters",compare:"Compare",all:"All",favorites:"Favorites",albums:"Albums",createFilter:"Create a filter",saveFilter:"Save filter",myFilters:"My filters"}
+  fr:{settings:"Réglages",expo:"Exposition",filter:"Intensité",select:"Sélectionner",delete:"Supprimer",appearance:"Apparence",language:"Langue",auto:"Auto",light:"Clair",dark:"Sombre",camera:"Caméra",gallery:"Galerie",filters:"Filtres",compare:"Comparer",all:"Toutes",favorites:"Favoris",albums:"Albums",createFilter:"Créer un filtre",saveFilter:"Enregistrer le filtre",myFilters:"Mes filtres"},
+  en:{settings:"Settings",expo:"Exposure",filter:"Intensity",select:"Select",delete:"Delete",appearance:"Appearance",language:"Language",auto:"Auto",light:"Light",dark:"Dark",camera:"Camera",gallery:"Gallery",filters:"Filters",compare:"Compare",all:"All",favorites:"Favorites",albums:"Albums",createFilter:"Create a filter",saveFilter:"Save filter",myFilters:"My filters"}
 };
 
 let galleryItems = JSON.parse(localStorage.getItem("lumaGallery") || "[]");
@@ -94,10 +91,6 @@ function applyLanguage(){
   const mft=$("#myFiltersTitle"); if(mft)mft.textContent=t.myFilters;
   const sm=$("#selectModeBtn"); if(sm&&!gallerySelectMode)sm.textContent=t.select;
   const bd=$("#bulkDeleteBtn"); if(bd)bd.textContent=t.delete;
-  const ve=$("#viewerEdit"); if(ve)ve.textContent="✦ "+t.edit;
-  const vc=$("#viewerEditCancel"); if(vc)vc.textContent=t.cancel;
-  const vs=$("#viewerEditSave"); if(vs)vs.textContent=t.save;
-  const vh=$("#viewerEditHint"); if(vh)vh.textContent=t.holdOriginal;
   const ae=$("#adjustModeExposure"); if(ae)ae.textContent=t.expo;  renderAdjustmentStrip(); syncActiveAdjustment();
 
   $$("[data-language]").forEach(b=>b.classList.toggle("active", b.dataset.language===appLanguage));
@@ -597,90 +590,15 @@ function addPhoto(data) {
 }
 
 
-function renderViewerEditFilters(){
-  const box=$("#viewerEditFilters");
-  if(!box)return;
-  const list=allFilters();
-  box.innerHTML=list.map(([name,css])=>`
-    <button class="viewer-edit-chip ${name===viewerEditFilterName?"active":""}" data-viewer-filter="${encodeURIComponent(name)}">
-      ${name}
-    </button>`).join("");
-  $$("[data-viewer-filter]").forEach(b=>b.onclick=()=>{
-    const name=decodeURIComponent(b.dataset.viewerFilter);
-    const f=list.find(x=>x[0]===name);
-    if(!f)return;
-    viewerEditFilterName=name;
-    viewerEditFilterCss=f[1]||"none";
-    $("#viewerImage").style.filter=viewerEditFilterCss;
-    renderViewerEditFilters();
-  });
-}
 
-function openViewerEdit(){
-  if(currentViewerIndex===null)return;
-  viewerOriginalData=galleryItems[currentViewerIndex].originalData || galleryItems[currentViewerIndex].data;
-  viewerEditFilterName="Aucun";
-  viewerEditFilterCss="none";
-  $("#viewerImage").style.filter="none";
-  $("#viewerEditPanel").classList.remove("hidden");
-  $("#viewerOverlay").classList.add("editing");
-  renderViewerEditFilters();
-}
 
-function closeViewerEdit(reset=true){
-  if(reset) $("#viewerImage").style.filter="none";
-  $("#viewerEditPanel").classList.add("hidden");
-  $("#viewerOverlay").classList.remove("editing");
-  viewerEditFilterName="Aucun";
-  viewerEditFilterCss="none";
-}
 
-function saveViewerEdit(){
-  if(currentViewerIndex===null)return;
-  const img=$("#viewerImage");
-  const canvas=$("#canvas");
-  const source=new Image();
-  source.onload=()=>{
-    canvas.width=source.naturalWidth;
-    canvas.height=source.naturalHeight;
-    const ctx=canvas.getContext("2d");
-    ctx.filter=viewerEditFilterCss||"none";
-    ctx.drawImage(source,0,0,canvas.width,canvas.height);
-    ctx.filter="none";
 
-    const item=galleryItems[currentViewerIndex];
-    if(!item.originalData) item.originalData=item.data;
-    item.data=canvas.toDataURL("image/jpeg",.92);
-    item.lastEditFilter=viewerEditFilterName;
-    saveGallery();
-    $("#viewerImage").src=item.data;
-    $("#viewerImage").style.filter="none";
-    closeViewerEdit(false);
-  };
-  source.src=galleryItems[currentViewerIndex].data;
-}
 
-function bindViewerBeforeAfter(){
-  const image=$("#viewerImage");
-  const showOriginal=()=>{
-    if(currentViewerIndex===null)return;
-    const item=galleryItems[currentViewerIndex];
-    if(!item.originalData)return;
-    image.dataset.editedSrc=image.src;
-    image.src=item.originalData;
-    image.style.filter="none";
-  };
-  const showEdited=()=>{
-    if(image.dataset.editedSrc){
-      image.src=image.dataset.editedSrc;
-      delete image.dataset.editedSrc;
-    }
-  };
-  image.addEventListener("pointerdown",showOriginal);
-  image.addEventListener("pointerup",showEdited);
-  image.addEventListener("pointercancel",showEdited);
-  image.addEventListener("pointerleave",showEdited);
-}
+
+
+
+
 
 function openViewer(i){
   currentViewerIndex=i;
@@ -688,7 +606,7 @@ function openViewer(i){
   $("#viewerFavorite").textContent=galleryItems[i].favorite?"♥ Favori":"♡ Favori";
   $("#viewerOverlay").classList.remove("hidden");
 }
-function closeViewer(){closeViewerEdit(false);$("#viewerOverlay").classList.add("hidden");currentViewerIndex=null;}
+function closeViewer(){$("#viewerOverlay").classList.add("hidden");currentViewerIndex=null;}
 
 function openCompare(){
   const [a,b]=compareSelection;
@@ -915,10 +833,6 @@ function bind() {
 
   // Viewer photo
   $("#closeViewer").onclick=closeViewer;
-  $("#viewerEdit").onclick=openViewerEdit;
-  $("#viewerEditCancel").onclick=()=>closeViewerEdit(true);
-  $("#viewerEditSave").onclick=saveViewerEdit;
-  bindViewerBeforeAfter();
   $("#viewerFavorite").onclick=()=>{
     if(currentViewerIndex===null)return;
     galleryItems[currentViewerIndex].favorite=!galleryItems[currentViewerIndex].favorite;
@@ -961,12 +875,12 @@ function activateView(id) {
 }
 
 async function forceFreshV3() {
-  if (sessionStorage.getItem("lumaCacheResetV17") === "1") return;
-  sessionStorage.setItem("lumaCacheResetV17","1");
+  if (sessionStorage.getItem("lumaCacheResetV18") === "1") return;
+  sessionStorage.setItem("lumaCacheResetV18","1");
   try {
     if ("caches" in window) {
       const keys = await caches.keys();
-      await Promise.all(keys.filter(k => k !== "luma-v17").map(k => caches.delete(k)));
+      await Promise.all(keys.filter(k => k !== "luma-v18").map(k => caches.delete(k)));
     }
     if ("serviceWorker" in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
@@ -982,7 +896,7 @@ function boot() {
   renderKeypad();renderFilters();renderGallery();renderAdjustmentStrip();syncActiveAdjustment();bind();updateFilterPreview();activateView("cameraView");applyAppearance();applyLanguage();
   if(sessionStorage.getItem("lumaUnlocked")==="1"){$("#lockScreen").classList.add("hidden");$("#app").classList.remove("hidden");startCamera();}
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js?v=17").then(reg => {
+    navigator.serviceWorker.register("sw.js?v=18").then(reg => {
       reg.update().catch(()=>{});
     }).catch(()=>{});
   }

@@ -1045,3 +1045,14 @@ body:has(#filtersView.active) .topbar{
 .viewer-overlay.editing{
   touch-action:manipulation;
 }
+
+/* V3.6 — retouche galerie retirée de la PWA */
+.viewer-actions{
+  grid-template-columns:repeat(3,1fr)!important;
+}
+.viewer-edit-panel,
+.viewer-edit-head,
+.viewer-edit-filters,
+.viewer-edit-hint{
+  display:none!important;
+}

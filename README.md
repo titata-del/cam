@@ -143,3 +143,8 @@ PWA pensée pour iPhone / GitHub Pages.
 - blocage des interactions vidéo natives
 - panneau Retoucher fixé dans la largeur du viewer
 - suppression du décalage horizontal / blocage de page
+
+## V3.6
+- fonction Retoucher retirée de la PWA
+- retouche avancée réservée à la future app native
+- galerie simplifiée : Favori / Album / Supprimer
