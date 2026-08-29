@@ -137,3 +137,9 @@ PWA pensée pour iPhone / GitHub Pages.
 - sauvegarde de l'original lors de la première retouche
 - appui long sur la photo retouchée = affiche l'originale
 - relâcher = revient à la version retouchée
+
+## V3.5
+- caméra non cliquable comme une vidéo
+- blocage des interactions vidéo natives
+- panneau Retoucher fixé dans la largeur du viewer
+- suppression du décalage horizontal / blocage de page

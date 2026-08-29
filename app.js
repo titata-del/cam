@@ -234,6 +234,24 @@ async function takePhotoWithTimer(){
 }
 
 
+
+function lockCameraVideoInteraction(){
+  ["video","filterPreview"].forEach(id=>{
+    const v=$("#"+id);
+    if(!v)return;
+    v.controls=false;
+    v.setAttribute("playsinline","");
+    v.setAttribute("webkit-playsinline","");
+    v.disablePictureInPicture=true;
+    ["click","dblclick","contextmenu"].forEach(type=>{
+      v.addEventListener(type,e=>{
+        e.preventDefault();
+        e.stopPropagation();
+      });
+    });
+  });
+}
+
 function renderKeypad() {
   const digits = ["1","2","3","4","5","6","7","8","9","","0","⌫"];
   $("#keypad").innerHTML = digits.map(d => d ? `<button class="key">${d}</button>` : "<span></span>").join("");
@@ -605,12 +623,14 @@ function openViewerEdit(){
   viewerEditFilterCss="none";
   $("#viewerImage").style.filter="none";
   $("#viewerEditPanel").classList.remove("hidden");
+  $("#viewerOverlay").classList.add("editing");
   renderViewerEditFilters();
 }
 
 function closeViewerEdit(reset=true){
   if(reset) $("#viewerImage").style.filter="none";
   $("#viewerEditPanel").classList.add("hidden");
+  $("#viewerOverlay").classList.remove("editing");
   viewerEditFilterName="Aucun";
   viewerEditFilterCss="none";
 }
@@ -941,12 +961,12 @@ function activateView(id) {
 }
 
 async function forceFreshV3() {
-  if (sessionStorage.getItem("lumaCacheResetV16") === "1") return;
-  sessionStorage.setItem("lumaCacheResetV16","1");
+  if (sessionStorage.getItem("lumaCacheResetV17") === "1") return;
+  sessionStorage.setItem("lumaCacheResetV17","1");
   try {
     if ("caches" in window) {
       const keys = await caches.keys();
-      await Promise.all(keys.filter(k => k !== "luma-v16").map(k => caches.delete(k)));
+      await Promise.all(keys.filter(k => k !== "luma-v17").map(k => caches.delete(k)));
     }
     if ("serviceWorker" in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
@@ -962,7 +982,7 @@ function boot() {
   renderKeypad();renderFilters();renderGallery();renderAdjustmentStrip();syncActiveAdjustment();bind();updateFilterPreview();activateView("cameraView");applyAppearance();applyLanguage();
   if(sessionStorage.getItem("lumaUnlocked")==="1"){$("#lockScreen").classList.add("hidden");$("#app").classList.remove("hidden");startCamera();}
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js?v=16").then(reg => {
+    navigator.serviceWorker.register("sw.js?v=17").then(reg => {
       reg.update().catch(()=>{});
     }).catch(()=>{});
   }

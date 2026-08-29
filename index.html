@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Luma" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-180.png" />
-  <link rel="stylesheet" href="styles.css?v=16" />
+  <link rel="stylesheet" href="styles.css?v=17" />
   <title>Luma Camera</title>
 </head>
 <body>
@@ -27,14 +27,14 @@
   <div id="app" class="screen app hidden">
     <header class="topbar">
       <button id="gridBtn" class="icon-btn">#</button>
-      <div class="brand-wrap"><div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v3.4</span></div><button id="settingsBtn" class="settings-btn" aria-label="Réglages"><span class="settings-dots">•••</span></button></div>
+      <div class="brand-wrap"><div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v3.5</span></div><button id="settingsBtn" class="settings-btn" aria-label="Réglages"><span class="settings-dots">•••</span></button></div>
       <button id="switchBtn" class="icon-btn switch-camera" aria-label="Retourner la caméra">⇄</button>
     </header>
 
     <main>
       <section id="cameraView" class="view active">
         <div class="camera-stage">
-          <video id="video" autoplay muted playsinline></video>
+          <video id="video" autoplay muted playsinline disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback"></video>
           <img id="traceImage" class="trace-image hidden" alt="" />
           <div id="grid" class="grid-overlay hidden">
             <i></i><i></i><i></i><i></i>
@@ -118,7 +118,7 @@
         <div class="editor-card">
           <div class="filter-preview-shell">
             <div class="preview-wrap">
-              <video id="filterPreview" autoplay muted playsinline></video>
+              <video id="filterPreview" autoplay muted playsinline disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback"></video>
               <div id="filterPreviewFx" class="filter-preview-fx"></div>
             </div>
           </div>
@@ -244,6 +244,6 @@
   </div>
 
   <canvas id="canvas" hidden></canvas>
-  <script src="app.js?v=16"></script>
+  <script src="app.js?v=17"></script>
 </body>
 </html>

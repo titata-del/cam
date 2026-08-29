@@ -987,3 +987,61 @@ body:has(#filtersView.active) .topbar{
   user-select:none;
   -webkit-user-select:none;
 }
+
+/* V3.5 — caméra non interactive comme vidéo */
+#video,
+#filterPreview{
+  pointer-events:none!important;
+  -webkit-user-select:none!important;
+  user-select:none!important;
+  -webkit-touch-callout:none!important;
+}
+
+/* Le stage reçoit les gestes, jamais la balise vidéo */
+.camera-stage{
+  isolation:isolate;
+}
+
+/* Viewer retouche : zéro décalage horizontal */
+.viewer-overlay{
+  overflow:hidden!important;
+}
+.viewer-inner{
+  width:min(560px,100%)!important;
+  max-width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+}
+.viewer-inner > *{
+  min-width:0!important;
+  max-width:100%!important;
+}
+.viewer-edit-panel{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+  overflow:hidden!important;
+}
+.viewer-edit-head{
+  min-width:0!important;
+}
+.viewer-edit-filters{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  overscroll-behavior-x:contain;
+}
+.viewer-edit-chip{
+  max-width:160px;
+}
+.viewer-overlay.editing .viewer-inner{
+  transform:none!important;
+  left:auto!important;
+  right:auto!important;
+}
+.viewer-overlay.editing{
+  touch-action:manipulation;
+}
