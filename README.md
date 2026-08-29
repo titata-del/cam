@@ -64,3 +64,10 @@ PWA pensée pour iPhone / GitHub Pages.
 - rétablit tous les boutons et interactions JavaScript
 - nouvelle version de cache v5
 - numéro v2.3 visible dans l'interface
+
+## V2.4 functional fix
+- restaure tous les événements perdus : Créer un filtre, Comparer, Albums, Enregistrer le filtre, curseur actif
+- corrige customFilterName
+- rend toute la bande des réglages accessible au swipe horizontal sur iPhone
+- preview caméra de l’éditeur forcée en object-fit: cover sans bande noire
+- activation de l’éditeur relance explicitement la preview vidéo

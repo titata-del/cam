@@ -264,3 +264,66 @@ body{touch-action:manipulation}
   .preview-wrap{min-height:110px;max-height:150px}
   .adjustment-item{height:66px}
 }
+
+/* V2.4 functional + iPhone layout fixes */
+#filtersView .editor-card{
+  grid-template-rows:auto auto minmax(150px,1fr) auto!important;
+  overflow:hidden!important;
+}
+.apple-adjustments{
+  width:100%;
+  min-width:0;
+  overflow:visible;
+}
+.adjustment-strip{
+  width:100%;
+  max-width:100%;
+  overflow-x:scroll!important;
+  overflow-y:hidden!important;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-x;
+  overscroll-behavior-x:contain;
+  flex-wrap:nowrap!important;
+  padding-right:28px!important;
+}
+.adjustment-item{
+  flex:0 0 70px!important;
+  min-width:70px!important;
+}
+.preview-wrap{
+  position:relative!important;
+  width:100%;
+  min-height:150px!important;
+  max-height:none!important;
+  height:100%!important;
+  background:#171313!important;
+  overflow:hidden!important;
+}
+#filterPreview{
+  position:absolute!important;
+  inset:0!important;
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:100%!important;
+  min-height:100%!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  background:transparent!important;
+}
+#filterPreviewFx{
+  position:absolute!important;
+  inset:0!important;
+}
+#filtersView .primary-btn{
+  flex:0 0 auto;
+}
+.album-card-mini{border:0;text-align:left;color:var(--ink)}
+.compare-stage{touch-action:none;user-select:none;-webkit-user-select:none}
+.compare-stage img{pointer-events:none}
+@media (max-height:700px){
+  #filtersView .editor-card{grid-template-rows:auto auto minmax(105px,1fr) auto!important;padding:12px}
+  .adjustment-item{height:62px!important;flex-basis:64px!important;min-width:64px!important}
+  .adjustment-strip{gap:7px!important}
+  .active-adjustment{padding:8px 10px!important}
+}

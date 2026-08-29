@@ -237,7 +237,7 @@ function renderAlbums() {
   box.innerHTML=albums.length?albums.map((a,i)=>{
     const count=galleryItems.filter(x=>(x.albums||[]).includes(a.id)).length;
     return `<button class="album-card-mini" data-album="${a.id}"><strong>${a.name}</strong><span>${count} photos</span></button>`;
-  }).join(""):`<div class="muted">No albums yet.</div>`;
+  }).join(""):`<div class="muted">Aucun album pour le moment.</div>`;
   $$("[data-album]").forEach(b=>b.onclick=()=>{galleryFilter="album:"+b.dataset.album;renderGallery();});
 }
 
@@ -296,7 +296,7 @@ function addPhoto(data) {
 function openViewer(i){
   currentViewerIndex=i;
   $("#viewerImage").src=galleryItems[i].data;
-  $("#viewerFavorite").textContent=galleryItems[i].favorite?"♥ Favori":"♡ Favorite";
+  $("#viewerFavorite").textContent=galleryItems[i].favorite?"♥ Favori":"♡ Favori";
   $("#viewerOverlay").classList.remove("hidden");
 }
 function closeViewer(){$("#viewerOverlay").classList.add("hidden");currentViewerIndex=null;}
@@ -371,7 +371,7 @@ function openAlbumModal(mode){
     $("#albumOverlayTitle").textContent="Ajouter à un album";
     $("#albumNameInput").classList.add("hidden");
     $("#albumChoices").classList.remove("hidden");
-    $("#albumChoices").innerHTML=albums.length?albums.map(a=>`<button class="album-choice" data-choice="${a.id}">${a.name} <span>＋</span></button>`).join(""):`<div class="muted">Create an album first.</div>`;
+    $("#albumChoices").innerHTML=albums.length?albums.map(a=>`<button class="album-choice" data-choice="${a.id}">${a.name} <span>＋</span></button>`).join(""):`<div class="muted">Crée d’abord un album.</div>`;
     $$("[data-choice]").forEach(b=>b.onclick=()=>{
       if(currentViewerIndex===null)return;
       const id=b.dataset.choice;
@@ -383,44 +383,127 @@ function openAlbumModal(mode){
 }
 
 function bind() {
+  // Camera controls
   $("#gridBtn").onclick=()=>$("#grid").classList.toggle("hidden");
   $("#switchBtn").onclick=async()=>{facingMode=facingMode==="environment"?"user":"environment";await startCamera();};
   $("#shutterBtn").onclick=capture;
+  $("#editFiltersBtn").onclick=()=>activateView("filtersView");
 
+  // Calque / photo de référence
   $("#traceInput").onchange=e=>{
-    const f=e.target.files[0];if(!f)return;const r=new FileReader();
-    r.onload=()=>{$("#traceImage").src=r.result;$("#traceImage").classList.remove("hidden");$("#traceOpacityWrap").classList.remove("hidden");$("#removeTraceBtn").classList.remove("hidden")};r.readAsDataURL(f);
+    const f=e.target.files[0];
+    if(!f)return;
+    const r=new FileReader();
+    r.onload=()=>{
+      $("#traceImage").src=r.result;
+      $("#traceImage").classList.remove("hidden");
+      $("#traceOpacityWrap").classList.remove("hidden");
+      $("#removeTraceBtn").classList.remove("hidden");
+    };
+    r.readAsDataURL(f);
   };
   $("#traceOpacity").oninput=e=>$("#traceImage").style.opacity=e.target.value/100;
-  $("#removeTraceBtn").onclick=()=>{$("#traceImage").src="";$("#traceImage").classList.add("hidden");$("#traceOpacityWrap").classList.add("hidden");$("#removeTraceBtn").classList.add("hidden");$("#traceInput").value="";};
+  $("#removeTraceBtn").onclick=()=>{
+    $("#traceImage").src="";
+    $("#traceImage").classList.add("hidden");
+    $("#traceOpacityWrap").classList.add("hidden");
+    $("#removeTraceBtn").classList.add("hidden");
+    $("#traceInput").value="";
+  };
   $("#cameraView .camera-stage").addEventListener("click",focusAt);
 
+  // Editeur façon iPhone
+  $("#activeAdjustmentSlider").oninput=e=>{
+    adjustmentValues[activeAdjustmentId]=+e.target.value;
+    $("#activeAdjustmentValue").textContent=e.target.value;
+    renderAdjustmentStrip();
+    updateFilterPreview();
+  };
+  $("#saveFilterBtn").onclick=()=>{
+    const name=$("#customFilterName").value.trim()||"Mon filtre";
+    customFilters.push({name,css:customCss(),fx:customFx()});
+    localStorage.setItem("lumaFilters",JSON.stringify(customFilters));
+    $("#customFilterName").value="";
+    renderFilters();
+    resetAdjustments();
+  };
+
+  // Comparateur A / B
+  $("#compareModeBtn").onclick=()=>{
+    compareMode=!compareMode;
+    compareSelection=[];
+    $("#compareModeBtn").textContent=compareMode?"Choisir A + B":"Comparer";
+    renderGallery();
+  };
+  $("#closeCompare").onclick=()=>{
+    $("#compareOverlay").classList.add("hidden");
+    compareSelection=[];
+    compareMode=false;
+    $("#compareModeBtn").textContent="Comparer";
+    renderGallery();
+  };
+
+  // Albums / dossiers
+  $("#newAlbumBtn").onclick=()=>openAlbumModal("create");
+  $("#cancelAlbumBtn").onclick=()=>$("#albumOverlay").classList.add("hidden");
+  $("#confirmAlbumBtn").onclick=()=>{
+    if(pendingAlbumMode!=="create")return;
+    const name=$("#albumNameInput").value.trim();
+    if(!name)return;
+    albums.push({id:"a"+Date.now(),name});
+    saveAlbums();
+    $("#albumOverlay").classList.add("hidden");
+    galleryFilter="albums";
+    $$(".gallery-tab").forEach(x=>x.classList.toggle("active",x.dataset.galleryFilter==="albums"));
+    renderGallery();
+  };
+  $$(".gallery-tab").forEach(b=>b.onclick=()=>{
+    $$(".gallery-tab").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    galleryFilter=b.dataset.galleryFilter;
+    compareMode=false;
+    compareSelection=[];
+    $("#compareModeBtn").textContent="Comparer";
+    renderGallery();
+  });
+
+  // Viewer photo
   $("#closeViewer").onclick=closeViewer;
   $("#viewerFavorite").onclick=()=>{
     if(currentViewerIndex===null)return;
-    galleryItems[currentViewerIndex].favorite=!galleryItems[currentViewerIndex].favorite;saveGallery();openViewer(currentViewerIndex);
+    galleryItems[currentViewerIndex].favorite=!galleryItems[currentViewerIndex].favorite;
+    saveGallery();
+    openViewer(currentViewerIndex);
   };
   $("#viewerDelete").onclick=()=>{
     if(currentViewerIndex===null)return;
-    galleryItems.splice(currentViewerIndex,1);saveGallery();closeViewer();
+    galleryItems.splice(currentViewerIndex,1);
+    saveGallery();
+    closeViewer();
   };
   $("#viewerAddAlbum").onclick=()=>openAlbumModal("add");
 
+  // Navigation principale
   $$(".tab").forEach(b=>b.onclick=()=>activateView(b.dataset.view));
 }
-
 function activateView(id) {
   $$(".view").forEach(v=>v.classList.toggle("active",v.id===id));
   $$(".tab").forEach(t=>t.classList.toggle("active",t.dataset.view===id));
+  if(id==="filtersView") {
+    renderAdjustmentStrip();
+    syncActiveAdjustment();
+    updateFilterPreview();
+    setTimeout(()=>{ if(stream){ $("#filterPreview").srcObject=stream; $("#filterPreview").play().catch(()=>{}); } },30);
+  }
 }
 
 async function forceFreshV3() {
-  if (sessionStorage.getItem("lumaCacheResetV5") === "1") return;
-  sessionStorage.setItem("lumaCacheResetV5","1");
+  if (sessionStorage.getItem("lumaCacheResetV6") === "1") return;
+  sessionStorage.setItem("lumaCacheResetV6","1");
   try {
     if ("caches" in window) {
       const keys = await caches.keys();
-      await Promise.all(keys.filter(k => k !== "luma-v5").map(k => caches.delete(k)));
+      await Promise.all(keys.filter(k => k !== "luma-v6").map(k => caches.delete(k)));
     }
     if ("serviceWorker" in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
@@ -436,7 +519,7 @@ function boot() {
   renderKeypad();renderFilters();renderGallery();renderAdjustmentStrip();syncActiveAdjustment();bind();updateFilterPreview();
   if(sessionStorage.getItem("lumaUnlocked")==="1"){$("#lockScreen").classList.add("hidden");$("#app").classList.remove("hidden");startCamera();}
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js?v=5").then(reg => {
+    navigator.serviceWorker.register("sw.js?v=6").then(reg => {
       reg.update().catch(()=>{});
     }).catch(()=>{});
   }
