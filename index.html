@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Luma" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-180.png" />
-  <link rel="stylesheet" href="styles.css?v=8" />
+  <link rel="stylesheet" href="styles.css?v=9" />
   <title>Luma Camera</title>
 </head>
 <body>
@@ -27,7 +27,7 @@
   <div id="app" class="screen app hidden">
     <header class="topbar">
       <button id="gridBtn" class="icon-btn">#</button>
-      <div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v2.6</span></div>
+      <div class="brand-wrap"><div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v2.7</span></div><button id="settingsBtn" class="settings-btn" aria-label="Réglages">•••</button></div>
       <button id="switchBtn" class="icon-btn switch-camera" aria-label="Retourner la caméra">⇄</button>
     </header>
 
@@ -40,6 +40,7 @@
             <i></i><i></i><i></i><i></i>
           </div>
           <div id="focusRing" class="focus-ring hidden"></div>
+          <div id="zoomIndicator" class="zoom-indicator hidden">1×</div>
           <div id="cameraError" class="camera-error hidden"></div>
 
           <div class="camera-tools">
@@ -183,7 +184,34 @@
   </div>
 
   <div id="shutterFlash" class="shutter-flash"></div>
-<canvas id="canvas" hidden></canvas>
-  <script src="app.js?v=8"></script>
+
+  <div id="settingsOverlay" class="settings-overlay hidden">
+    <div class="settings-card">
+      <div class="settings-header">
+        <h3 id="settingsTitle">Réglages</h3>
+        <button id="closeSettings" class="settings-close">×</button>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-label" id="appearanceLabel">Apparence</div>
+        <div class="segmented" id="appearanceOptions">
+          <button data-appearance="system">Auto</button>
+          <button data-appearance="light">Clair</button>
+          <button data-appearance="dark">Sombre</button>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-label" id="languageLabel">Langue</div>
+        <div class="segmented" id="languageOptions">
+          <button data-language="fr">Français</button>
+          <button data-language="en">English</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="canvas" hidden></canvas>
+  <script src="app.js?v=9"></script>
 </body>
 </html>

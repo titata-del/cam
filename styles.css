@@ -526,3 +526,52 @@ body{touch-action:manipulation}
     display:block;
   }
 }
+
+.brand-wrap{display:flex;align-items:center;gap:8px}
+.settings-btn{
+  width:30px;height:30px;border:0;border-radius:12px;
+  background:rgba(255,255,255,.62);color:var(--muted);
+  font-weight:700;letter-spacing:1px;backdrop-filter:blur(14px)
+}
+.zoom-indicator{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  z-index:8;min-width:54px;padding:9px 12px;border-radius:18px;
+  background:rgba(15,13,13,.48);color:white;text-align:center;
+  font-weight:600;font-size:15px;backdrop-filter:blur(16px);pointer-events:none
+}
+.settings-overlay{
+  position:fixed;inset:0;z-index:90;background:rgba(22,18,18,.48);
+  backdrop-filter:blur(22px);display:grid;place-items:center;padding:18px
+}
+.settings-card{width:min(390px,100%);border-radius:28px;background:var(--bg);padding:18px;box-shadow:0 24px 70px rgba(38,25,22,.24)}
+.settings-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.settings-header h3{margin:0;font-size:22px}
+.settings-close{width:36px;height:36px;border:0;border-radius:50%;background:rgba(255,255,255,.68);font-size:24px}
+.settings-group{margin:14px 0}
+.settings-label{font-size:12px;color:var(--muted);margin-bottom:8px}
+.segmented{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:rgba(255,255,255,.48);border-radius:16px;padding:5px}
+#languageOptions{grid-template-columns:repeat(2,1fr)}
+.segmented button{border:0;border-radius:12px;padding:10px 8px;background:transparent;font-size:12px}
+.segmented button.active{background:white;box-shadow:0 5px 14px rgba(66,47,43,.08)}
+
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme]){
+    --bg:#161313;--card:rgba(36,31,30,.88);--ink:#f6efec;--muted:#a99b97;
+    --line:rgba(255,255,255,.10);--glass:rgba(40,34,33,.72)
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#161313;--card:rgba(36,31,30,.88);--ink:#f6efec;--muted:#a99b97;
+  --line:rgba(255,255,255,.10);--glass:rgba(40,34,33,.72)
+}
+:root[data-theme="light"]{
+  --bg:#f6eee9;--card:rgba(255,255,255,.76);--ink:#312827;--muted:#8c7e7a;
+  --line:rgba(57,44,42,.10);--glass:rgba(255,255,255,.64)
+}
+:root[data-theme="dark"] body{background:#161313}
+:root[data-theme="dark"] .editor-card,
+:root[data-theme="dark"] .settings-card,
+:root[data-theme="dark"] .tabbar{background:rgba(35,30,29,.86)}
+:root[data-theme="dark"] .tab.active,
+:root[data-theme="dark"] .segmented button.active,
+:root[data-theme="dark"] .my-filter-card{background:#2e2827;color:#f6efec}

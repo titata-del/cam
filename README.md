@@ -85,3 +85,9 @@ PWA pensée pour iPhone / GitHub Pages.
 - bouton Retourner la caméra disponible dans Caméra et Filtres
 - bouton Grille uniquement dans Caméra
 - version prévue comme base stable avant ajout des nouvelles fonctions
+
+## V2.7
+- zoom au pincement sur la caméra quand Safari expose le zoom matériel
+- affichage dynamique du niveau de zoom
+- Réglages avec Apparence Auto / Clair / Sombre
+- Français / English

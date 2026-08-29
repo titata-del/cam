@@ -12,6 +12,16 @@ let compareSelection = [];
 let galleryFilter = "all";
 let currentViewerIndex = null;
 let pendingAlbumMode = "create";
+let pinchState = null;
+let pinchZoom = 1;
+let zoomIndicatorTimer = null;
+let appAppearance = localStorage.getItem("lumaAppearance") || "system";
+let appLanguage = localStorage.getItem("lumaLanguage") || "fr";
+
+const translations = {
+  fr:{settings:"Réglages",appearance:"Apparence",language:"Langue",auto:"Auto",light:"Clair",dark:"Sombre",camera:"Caméra",gallery:"Galerie",filters:"Filtres",compare:"Comparer",all:"Toutes",favorites:"Favoris",albums:"Albums",createFilter:"Créer un filtre",saveFilter:"Enregistrer le filtre"},
+  en:{settings:"Settings",appearance:"Appearance",language:"Language",auto:"Auto",light:"Light",dark:"Dark",camera:"Camera",gallery:"Gallery",filters:"Filters",compare:"Compare",all:"All",favorites:"Favorites",albums:"Albums",createFilter:"Create a filter",saveFilter:"Save filter"}
+};
 
 let galleryItems = JSON.parse(localStorage.getItem("lumaGallery") || "[]");
 let customFilters = JSON.parse(localStorage.getItem("lumaFilters") || "[]");
@@ -40,6 +50,89 @@ async function sha256(text) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
   return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
 }
+
+
+function applyAppearance(){
+  if(appAppearance==="system") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", appAppearance);
+  $$("[data-appearance]").forEach(b=>b.classList.toggle("active", b.dataset.appearance===appAppearance));
+}
+
+function applyLanguage(){
+  const t=translations[appLanguage]||translations.fr;
+  $("#settingsTitle").textContent=t.settings;
+  $("#appearanceLabel").textContent=t.appearance;
+  $("#languageLabel").textContent=t.language;
+
+  const a=$('[data-appearance="system"]'), l=$('[data-appearance="light"]'), d=$('[data-appearance="dark"]');
+  if(a)a.textContent=t.auto; if(l)l.textContent=t.light; if(d)d.textContent=t.dark;
+
+  const tabs=$$(".tab"), labels=[t.camera,t.gallery,t.filters];
+  tabs.forEach((b,i)=>{if(labels[i])b.textContent=labels[i]});
+
+  const compare=$("#compareModeBtn"); if(compare&&!compareMode)compare.textContent=t.compare;
+  const gt=$$(".gallery-tab"), gl=[t.all,t.favorites,t.albums];
+  gt.forEach((b,i)=>{if(gl[i])b.textContent=gl[i]});
+
+  const h2=$("#filtersView h2"); if(h2)h2.textContent=t.createFilter;
+  const save=$("#saveFilterBtn"); if(save)save.textContent=t.saveFilter;
+
+  $$("[data-language]").forEach(b=>b.classList.toggle("active", b.dataset.language===appLanguage));
+}
+
+function openSettings(){
+  applyAppearance();
+  applyLanguage();
+  $("#settingsOverlay").classList.remove("hidden");
+}
+
+function showZoomIndicator(value){
+  const z=$("#zoomIndicator");
+  z.textContent=(Math.round(value*10)/10)+"×";
+  z.classList.remove("hidden");
+  clearTimeout(zoomIndicatorTimer);
+  zoomIndicatorTimer=setTimeout(()=>z.classList.add("hidden"),700);
+}
+
+async function applyZoomValue(value){
+  if(!stream)return;
+  const track=stream.getVideoTracks()[0];
+  const caps=track.getCapabilities?track.getCapabilities():{};
+  if(!caps.zoom)return;
+  const min=caps.zoom.min??1, max=caps.zoom.max??1, step=caps.zoom.step||0.1;
+  const clamped=Math.max(min,Math.min(max,value));
+  const snapped=Math.round(clamped/step)*step;
+  try{
+    await track.applyConstraints({advanced:[{zoom:snapped}]});
+    pinchZoom=snapped;
+    showZoomIndicator(snapped);
+    $$(".zoom-btn").forEach(x=>x.classList.remove("active"));
+  }catch(e){}
+}
+
+function bindPinchZoom(){
+  const stage=$("#cameraView .camera-stage");
+  if(!stage)return;
+  const dist=(a,b)=>Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+
+  stage.addEventListener("touchstart", e=>{
+    if(e.touches.length!==2||!stream)return;
+    const track=stream.getVideoTracks()[0], caps=track.getCapabilities?track.getCapabilities():{};
+    if(!caps.zoom)return;
+    const s=track.getSettings?track.getSettings():{};
+    pinchZoom=s.zoom||pinchZoom||1;
+    pinchState={distance:dist(e.touches[0],e.touches[1]),zoom:pinchZoom};
+  },{passive:true});
+
+  stage.addEventListener("touchmove", e=>{
+    if(!pinchState||e.touches.length!==2)return;
+    const ratio=dist(e.touches[0],e.touches[1])/pinchState.distance;
+    applyZoomValue(pinchState.zoom*ratio);
+  },{passive:true});
+
+  stage.addEventListener("touchend", e=>{if(e.touches.length<2)pinchState=null},{passive:true});
+}
+
 
 function renderKeypad() {
   const digits = ["1","2","3","4","5","6","7","8","9","","0","⌫"];
@@ -81,6 +174,7 @@ async function startCamera() {
     $("#filterPreview").style.transform = facingMode==="user" ? "scaleX(-1)" : "none";
     $("#cameraError").classList.add("hidden");
     await renderZoom();
+    try{const s=stream.getVideoTracks()[0].getSettings();pinchZoom=s.zoom||1}catch(e){}
   } catch (e) {
     $("#cameraError").textContent = "Caméra indisponible. Vérifie l’autorisation caméra dans Safari puis rouvre l’app.";
     $("#cameraError").classList.remove("hidden");
@@ -404,6 +498,19 @@ function openAlbumModal(mode){
 }
 
 function bind() {
+  bindPinchZoom();
+  $("#settingsBtn").onclick=openSettings;
+  $("#closeSettings").onclick=()=>$("#settingsOverlay").classList.add("hidden");
+  $$("[data-appearance]").forEach(b=>b.onclick=()=>{
+    appAppearance=b.dataset.appearance;
+    localStorage.setItem("lumaAppearance",appAppearance);
+    applyAppearance();
+  });
+  $$("[data-language]").forEach(b=>b.onclick=()=>{
+    appLanguage=b.dataset.language;
+    localStorage.setItem("lumaLanguage",appLanguage);
+    applyLanguage();
+  });
   bindAdjustmentScrollbar();
   // Camera controls
   $("#gridBtn").onclick=()=>$("#grid").classList.toggle("hidden");
@@ -533,12 +640,12 @@ function activateView(id) {
 }
 
 async function forceFreshV3() {
-  if (sessionStorage.getItem("lumaCacheResetV8") === "1") return;
-  sessionStorage.setItem("lumaCacheResetV8","1");
+  if (sessionStorage.getItem("lumaCacheResetV9") === "1") return;
+  sessionStorage.setItem("lumaCacheResetV9","1");
   try {
     if ("caches" in window) {
       const keys = await caches.keys();
-      await Promise.all(keys.filter(k => k !== "luma-v8").map(k => caches.delete(k)));
+      await Promise.all(keys.filter(k => k !== "luma-v9").map(k => caches.delete(k)));
     }
     if ("serviceWorker" in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
@@ -551,10 +658,10 @@ async function forceFreshV3() {
 
 function boot() {
   forceFreshV3();
-  renderKeypad();renderFilters();renderGallery();renderAdjustmentStrip();syncActiveAdjustment();bind();updateFilterPreview();activateView("cameraView");
+  renderKeypad();renderFilters();renderGallery();renderAdjustmentStrip();syncActiveAdjustment();bind();updateFilterPreview();activateView("cameraView");applyAppearance();applyLanguage();
   if(sessionStorage.getItem("lumaUnlocked")==="1"){$("#lockScreen").classList.add("hidden");$("#app").classList.remove("hidden");startCamera();}
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js?v=8").then(reg => {
+    navigator.serviceWorker.register("sw.js?v=9").then(reg => {
       reg.update().catch(()=>{});
     }).catch(()=>{});
   }
