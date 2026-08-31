@@ -155,3 +155,12 @@ PWA pensée pour iPhone / GitHub Pages.
 - date + heure dans la roulette
 - bouton Encore
 - bouton Ouvrir pour afficher la photo normalement
+
+## V3.8
+- galerie refaite dans l'esprit Photos iPhone
+- Comparer toujours accessible
+- barre d'actions horizontale défilable
+- vraie grille 3 colonnes mobile / 5 colonnes desktop
+- scroll vertical dédié à la galerie
+- suppression des superpositions de photos
+- compteur de photos

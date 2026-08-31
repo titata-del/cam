@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Luma" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-180.png" />
-  <link rel="stylesheet" href="styles.css?v=19" />
+  <link rel="stylesheet" href="styles.css?v=20" />
   <title>Luma Camera</title>
 </head>
 <body>
@@ -27,7 +27,7 @@
   <div id="app" class="screen app hidden">
     <header class="topbar">
       <button id="gridBtn" class="icon-btn">#</button>
-      <div class="brand-wrap"><div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v3.7</span></div><button id="settingsBtn" class="settings-btn" aria-label="Réglages"><span class="settings-dots">•••</span></button></div>
+      <div class="brand-wrap"><div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v3.8</span></div><button id="settingsBtn" class="settings-btn" aria-label="Réglages"><span class="settings-dots">•••</span></button></div>
       <button id="switchBtn" class="icon-btn switch-camera" aria-label="Retourner la caméra">⇄</button>
     </header>
 
@@ -87,13 +87,21 @@
           </div>
           <div class="gallery-actions">
             <button id="newAlbumBtn" class="soft-btn">+ Album</button>
-            <button id="rouletteBtn" class="soft-btn roulette-btn">✦ Au hasard</button>
+            <div class="gallery-actionbar">
+          <button id="rouletteBtn" class="soft-btn roulette-btn">✦ Au hasard</button>
             <button id="selectModeBtn" class="soft-btn">Sélectionner</button>
             <button id="bulkDeleteBtn" class="soft-btn danger-soft hidden">Supprimer</button>
             <button id="compareModeBtn" class="soft-btn">Comparer</button>
+        </div>
           </div>
         </div>
 
+        <div class="gallery-ios-header">
+          <div>
+            <div class="gallery-ios-title">Photos</div>
+            <div id="galleryCount" class="gallery-ios-count">0 photo</div>
+          </div>
+        </div>
         <div class="gallery-tabs">
           <button class="gallery-tab active" data-gallery-filter="all">Toutes</button>
           <button class="gallery-tab" data-gallery-filter="favorites">Favoris</button>
@@ -253,6 +261,6 @@
   </div>
 
   <canvas id="canvas" hidden></canvas>
-  <script src="app.js?v=19"></script>
+  <script src="app.js?v=20"></script>
 </body>
 </html>

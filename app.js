@@ -539,6 +539,11 @@ function renderGallery() {
   const grid=$("#galleryGrid");
   if(galleryFilter==="albums"){grid.innerHTML="";$("#emptyGallery").classList.add("hidden");return;}
   const idxs=filteredGalleryIndexes();
+  const gc=$("#galleryCount");
+  if(gc){
+    const n=idxs.length;
+    gc.textContent=`${n} photo${n===1?"":"s"}`;
+  }
   $("#emptyGallery").classList.toggle("hidden",idxs.length>0);
 
   grid.innerHTML=idxs.map(i=>{
@@ -570,6 +575,7 @@ function renderGallery() {
       if(galleryBulkSelection.has(i)) galleryBulkSelection.delete(i);
       else galleryBulkSelection.add(i);
       $("#bulkDeleteBtn").classList.toggle("hidden",galleryBulkSelection.size===0);
+      $("#compareModeBtn").classList.remove("hidden");
       renderGallery();
       return;
     }
@@ -844,6 +850,7 @@ function bind() {
       ? (appLanguage==="en"?"Cancel":"Annuler")
       : (appLanguage==="en"?"Select":"Sélectionner");
     $("#bulkDeleteBtn").classList.add("hidden");
+    $("#compareModeBtn").classList.remove("hidden");
     compareMode=false; compareSelection=[];
     renderGallery();
   };
@@ -853,6 +860,7 @@ function bind() {
     gallerySelectMode=false;
     $("#bulkDeleteBtn").classList.add("hidden");
     $("#selectModeBtn").textContent=appLanguage==="en"?"Select":"Sélectionner";
+    $("#compareModeBtn").classList.remove("hidden");
     saveGallery();
   };
   $("#compareModeBtn").onclick=()=>{
@@ -937,12 +945,12 @@ function activateView(id) {
 }
 
 async function forceFreshV3() {
-  if (sessionStorage.getItem("lumaCacheResetV19") === "1") return;
-  sessionStorage.setItem("lumaCacheResetV19","1");
+  if (sessionStorage.getItem("lumaCacheResetV20") === "1") return;
+  sessionStorage.setItem("lumaCacheResetV20","1");
   try {
     if ("caches" in window) {
       const keys = await caches.keys();
-      await Promise.all(keys.filter(k => k !== "luma-v19").map(k => caches.delete(k)));
+      await Promise.all(keys.filter(k => k !== "luma-v20").map(k => caches.delete(k)));
     }
     if ("serviceWorker" in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
@@ -958,7 +966,7 @@ function boot() {
   renderKeypad();renderFilters();renderGallery();renderAdjustmentStrip();syncActiveAdjustment();bind();updateFilterPreview();activateView("cameraView");applyAppearance();applyLanguage();
   if(sessionStorage.getItem("lumaUnlocked")==="1"){$("#lockScreen").classList.add("hidden");$("#app").classList.remove("hidden");startCamera();}
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js?v=19").then(reg => {
+    navigator.serviceWorker.register("sw.js?v=20").then(reg => {
       reg.update().catch(()=>{});
     }).catch(()=>{});
   }
