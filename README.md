@@ -164,3 +164,11 @@ PWA pensée pour iPhone / GitHub Pages.
 - scroll vertical dédié à la galerie
 - suppression des superpositions de photos
 - compteur de photos
+
+## V3.9
+- nouvel onglet Studio
+- Photobooth 3 ou 4 prises
+- compte à rebours automatique
+- génération d'une bande photo verticale
+- possibilité de refaire
+- enregistrement de la bande dans la galerie

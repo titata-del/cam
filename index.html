@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Luma" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-180.png" />
-  <link rel="stylesheet" href="styles.css?v=20" />
+  <link rel="stylesheet" href="styles.css?v=21" />
   <title>Luma Camera</title>
 </head>
 <body>
@@ -27,7 +27,7 @@
   <div id="app" class="screen app hidden">
     <header class="topbar">
       <button id="gridBtn" class="icon-btn">#</button>
-      <div class="brand-wrap"><div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v3.8</span></div><button id="settingsBtn" class="settings-btn" aria-label="Réglages"><span class="settings-dots">•••</span></button></div>
+      <div class="brand-wrap"><div class="brand">Luma <span id="buildVersion" style="font:500 9px -apple-system;color:#9b8d88;vertical-align:middle">v3.9</span></div><button id="settingsBtn" class="settings-btn" aria-label="Réglages"><span class="settings-dots">•••</span></button></div>
       <button id="switchBtn" class="icon-btn switch-camera" aria-label="Retourner la caméra">⇄</button>
     </header>
 
@@ -171,6 +171,7 @@
       <button class="tab active" data-view="cameraView">Caméra</button>
       <button class="tab" data-view="galleryView">Galerie</button>
       <button class="tab" data-view="filtersView">Filtres</button>
+      <button class="tab" data-view="studioView">Studio</button>
     </nav>
   </div>
 
@@ -260,7 +261,40 @@
     </div>
   </div>
 
+  
+    <section id="studioView" class="view studio-view">
+      <div class="studio-head">
+        <div>
+          <h2>Studio</h2>
+          <p id="studioSubtitle">Photobooth</p>
+        </div>
+      </div>
+
+      <div class="studio-card">
+        <div class="studio-preview">
+          <video id="studioVideo" autoplay muted playsinline disablepictureinpicture controlslist="nodownload noplaybackrate noremoteplayback"></video>
+          <div id="studioCountdown" class="studio-countdown hidden">3</div>
+        </div>
+
+        <div class="studio-controls">
+          <div class="studio-segment">
+            <button id="booth3Btn" class="studio-choice active" type="button">3 photos</button>
+            <button id="booth4Btn" class="studio-choice" type="button">4 photos</button>
+          </div>
+          <button id="startBoothBtn" class="studio-primary" type="button">Démarrer le photobooth</button>
+        </div>
+      </div>
+
+      <div id="boothResult" class="booth-result hidden">
+        <img id="boothResultImage" alt="">
+        <div class="booth-actions">
+          <button id="boothRetakeBtn" type="button">Refaire</button>
+          <button id="boothSaveBtn" type="button">Enregistrer dans la galerie</button>
+        </div>
+      </div>
+    </section>
+
   <canvas id="canvas" hidden></canvas>
-  <script src="app.js?v=20"></script>
+  <script src="app.js?v=21"></script>
 </body>
 </html>

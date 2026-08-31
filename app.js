@@ -23,10 +23,13 @@ let cameraExposureValue = 0;
 let gallerySelectMode = false;
 let galleryBulkSelection = new Set();
 let rouletteCurrentIndex = null;
+let boothShots = 3;
+let boothFrames = [];
+let boothResultData = null;
 
 const translations = {
-  fr:{roulette:"Au hasard",rouletteTitle:"Photo Roulette",again:"Encore",open:"Ouvrir",settings:"Réglages",expo:"Exposition",filter:"Intensité",select:"Sélectionner",delete:"Supprimer",appearance:"Apparence",language:"Langue",auto:"Auto",light:"Clair",dark:"Sombre",camera:"Caméra",gallery:"Galerie",filters:"Filtres",compare:"Comparer",all:"Toutes",favorites:"Favoris",albums:"Albums",createFilter:"Créer un filtre",saveFilter:"Enregistrer le filtre",myFilters:"Mes filtres"},
-  en:{roulette:"Random",rouletteTitle:"Photo Roulette",again:"Again",open:"Open",settings:"Settings",expo:"Exposure",filter:"Intensity",select:"Select",delete:"Delete",appearance:"Appearance",language:"Language",auto:"Auto",light:"Light",dark:"Dark",camera:"Camera",gallery:"Gallery",filters:"Filters",compare:"Compare",all:"All",favorites:"Favorites",albums:"Albums",createFilter:"Create a filter",saveFilter:"Save filter",myFilters:"My filters"}
+  fr:{studio:"Studio",photobooth:"Photobooth",startBooth:"Démarrer le photobooth",retake:"Refaire",saveGallery:"Enregistrer dans la galerie",roulette:"Au hasard",rouletteTitle:"Photo Roulette",again:"Encore",open:"Ouvrir",settings:"Réglages",expo:"Exposition",filter:"Intensité",select:"Sélectionner",delete:"Supprimer",appearance:"Apparence",language:"Langue",auto:"Auto",light:"Clair",dark:"Sombre",camera:"Caméra",gallery:"Galerie",filters:"Filtres",compare:"Comparer",all:"Toutes",favorites:"Favoris",albums:"Albums",createFilter:"Créer un filtre",saveFilter:"Enregistrer le filtre",myFilters:"Mes filtres"},
+  en:{studio:"Studio",photobooth:"Photobooth",startBooth:"Start photobooth",retake:"Retake",saveGallery:"Save to gallery",roulette:"Random",rouletteTitle:"Photo Roulette",again:"Again",open:"Open",settings:"Settings",expo:"Exposure",filter:"Intensity",select:"Select",delete:"Delete",appearance:"Appearance",language:"Language",auto:"Auto",light:"Light",dark:"Dark",camera:"Camera",gallery:"Gallery",filters:"Filters",compare:"Compare",all:"All",favorites:"Favorites",albums:"Albums",createFilter:"Create a filter",saveFilter:"Save filter",myFilters:"My filters"}
 };
 
 let galleryItems = JSON.parse(localStorage.getItem("lumaGallery") || "[]");
@@ -77,7 +80,7 @@ function applyLanguage(){
   const a=$('[data-appearance="system"]'), l=$('[data-appearance="light"]'), d=$('[data-appearance="dark"]');
   if(a)a.textContent=t.auto; if(l)l.textContent=t.light; if(d)d.textContent=t.dark;
 
-  const tabs=$$(".tab"), labels=[t.camera,t.gallery,t.filters];
+  const tabs=$$(".tab"), labels=[t.camera,t.gallery,t.filters,t.studio];
   tabs.forEach((b,i)=>{if(labels[i])b.textContent=labels[i]});
 
   const compare=$("#compareModeBtn"); if(compare&&!compareMode)compare.textContent=t.compare;
@@ -96,6 +99,10 @@ function applyLanguage(){
   const rt=$("#rouletteTitle"); if(rt)rt.textContent=t.rouletteTitle;
   const ra=$("#rouletteAgain"); if(ra)ra.textContent=t.again;
   const ro=$("#rouletteOpen"); if(ro)ro.textContent=t.open;
+  const ss=$("#studioSubtitle"); if(ss)ss.textContent=t.photobooth;
+  const sb=$("#startBoothBtn"); if(sb)sb.textContent=t.startBooth;
+  const br=$("#boothRetakeBtn"); if(br)br.textContent=t.retake;
+  const bs=$("#boothSaveBtn"); if(bs)bs.textContent=t.saveGallery;
   const ae=$("#adjustModeExposure"); if(ae)ae.textContent=t.expo;  renderAdjustmentStrip(); syncActiveAdjustment();
 
   $$("[data-language]").forEach(b=>b.classList.toggle("active", b.dataset.language===appLanguage));
@@ -249,6 +256,129 @@ function lockCameraVideoInteraction(){
     });
   });
 }
+
+
+function syncStudioStream(){
+  const sv=$("#studioVideo");
+  if(!sv)return;
+  if(stream && sv.srcObject!==stream){
+    sv.srcObject=stream;
+    sv.play().catch(()=>{});
+  }
+}
+
+function setBoothShots(n){
+  boothShots=n;
+  $("#booth3Btn").classList.toggle("active",n===3);
+  $("#booth4Btn").classList.toggle("active",n===4);
+}
+
+async function captureBoothFrame(){
+  const video=$("#studioVideo");
+  if(!video.videoWidth || !video.videoHeight) return null;
+  const c=document.createElement("canvas");
+  c.width=video.videoWidth;
+  c.height=video.videoHeight;
+  const ctx=c.getContext("2d");
+  ctx.drawImage(video,0,0,c.width,c.height);
+  return c.toDataURL("image/jpeg",.9);
+}
+
+async function runBoothCountdown(){
+  const overlay=$("#studioCountdown");
+  overlay.classList.remove("hidden");
+  for(let n=3;n>0;n--){
+    overlay.textContent=n;
+    await new Promise(r=>setTimeout(r,700));
+  }
+  overlay.textContent="✦";
+  await new Promise(r=>setTimeout(r,180));
+  overlay.classList.add("hidden");
+}
+
+async function startPhotobooth(){
+  if(!stream) await startCamera();
+  syncStudioStream();
+
+  boothFrames=[];
+  boothResultData=null;
+  $("#boothResult").classList.add("hidden");
+  $("#startBoothBtn").disabled=true;
+
+  for(let i=0;i<boothShots;i++){
+    await runBoothCountdown();
+    const frame=await captureBoothFrame();
+    if(frame) boothFrames.push(frame);
+    if(i<boothShots-1) await new Promise(r=>setTimeout(r,320));
+  }
+
+  $("#startBoothBtn").disabled=false;
+  if(boothFrames.length) await buildBoothStrip();
+}
+
+async function buildBoothStrip(){
+  const loaded=await Promise.all(boothFrames.map(src=>new Promise(res=>{
+    const img=new Image();
+    img.onload=()=>res(img);
+    img.src=src;
+  })));
+
+  const width=900;
+  const pad=42;
+  const gap=28;
+  const photoW=width-pad*2;
+  const photoH=Math.round(photoW*1.22);
+  const footer=110;
+  const height=pad + loaded.length*photoH + (loaded.length-1)*gap + footer + pad;
+
+  const c=document.createElement("canvas");
+  c.width=width;
+  c.height=height;
+  const ctx=c.getContext("2d");
+  ctx.fillStyle="#f7f4f1";
+  ctx.fillRect(0,0,width,height);
+
+  let y=pad;
+  loaded.forEach(img=>{
+    const target=photoW/photoH;
+    const source=img.width/img.height;
+    let sx=0,sy=0,sw=img.width,sh=img.height;
+    if(source>target){
+      sw=img.height*target;
+      sx=(img.width-sw)/2;
+    }else{
+      sh=img.width/target;
+      sy=(img.height-sh)/2;
+    }
+    ctx.drawImage(img,sx,sy,sw,sh,pad,y,photoW,photoH);
+    y+=photoH+gap;
+  });
+
+  ctx.fillStyle="#2a2523";
+  ctx.font="600 38px system-ui, -apple-system, sans-serif";
+  ctx.textAlign="center";
+  ctx.fillText("Luma Photobooth",width/2,height-70);
+
+  boothResultData=c.toDataURL("image/jpeg",.92);
+  $("#boothResultImage").src=boothResultData;
+  $("#boothResult").classList.remove("hidden");
+}
+
+function saveBoothToGallery(){
+  if(!boothResultData)return;
+  galleryItems.unshift({
+    data:boothResultData,
+    created:Date.now(),
+    favorite:false,
+    albums:[]
+  });
+  saveGallery();
+  $("#boothSaveBtn").textContent=appLanguage==="en"?"Saved ✓":"Enregistré ✓";
+  setTimeout(()=>{
+    $("#boothSaveBtn").textContent=appLanguage==="en"?"Save to gallery":"Enregistrer dans la galerie";
+  },1000);
+}
+
 
 function renderKeypad() {
   const digits = ["1","2","3","4","5","6","7","8","9","","0","⌫"];
@@ -758,6 +888,11 @@ function openAlbumModal(mode){
 }
 
 function bind() {
+  $("#booth3Btn").onclick=()=>setBoothShots(3);
+  $("#booth4Btn").onclick=()=>setBoothShots(4);
+  $("#startBoothBtn").onclick=startPhotobooth;
+  $("#boothRetakeBtn").onclick=startPhotobooth;
+  $("#boothSaveBtn").onclick=saveBoothToGallery;
   $("#rouletteBtn").onclick=showRoulette;
   $("#rouletteClose").onclick=closeRoulette;
   $("#rouletteAgain").onclick=showRoulette;
@@ -945,12 +1080,12 @@ function activateView(id) {
 }
 
 async function forceFreshV3() {
-  if (sessionStorage.getItem("lumaCacheResetV20") === "1") return;
-  sessionStorage.setItem("lumaCacheResetV20","1");
+  if (sessionStorage.getItem("lumaCacheResetV21") === "1") return;
+  sessionStorage.setItem("lumaCacheResetV21","1");
   try {
     if ("caches" in window) {
       const keys = await caches.keys();
-      await Promise.all(keys.filter(k => k !== "luma-v20").map(k => caches.delete(k)));
+      await Promise.all(keys.filter(k => k !== "luma-v21").map(k => caches.delete(k)));
     }
     if ("serviceWorker" in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
@@ -966,7 +1101,7 @@ function boot() {
   renderKeypad();renderFilters();renderGallery();renderAdjustmentStrip();syncActiveAdjustment();bind();updateFilterPreview();activateView("cameraView");applyAppearance();applyLanguage();
   if(sessionStorage.getItem("lumaUnlocked")==="1"){$("#lockScreen").classList.add("hidden");$("#app").classList.remove("hidden");startCamera();}
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js?v=20").then(reg => {
+    navigator.serviceWorker.register("sw.js?v=21").then(reg => {
       reg.update().catch(()=>{});
     }).catch(()=>{});
   }

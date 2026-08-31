@@ -1269,3 +1269,114 @@ body:has(#filtersView.active) .topbar{
     grid-template-columns:repeat(5,minmax(0,1fr))!important;
   }
 }
+
+/* V3.9 — Studio / Photobooth */
+#studioView.active{
+  position:absolute!important;
+  inset:64px 0 84px 0!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  background:var(--bg)!important;
+  z-index:5!important;
+  padding:14px!important;
+}
+.studio-head h2{
+  margin:0;
+  font-size:28px;
+  color:var(--ink);
+}
+.studio-head p{
+  margin:4px 0 12px;
+  color:var(--muted);
+  font-size:12px;
+}
+.studio-card{
+  border-radius:24px;
+  background:var(--card);
+  padding:12px;
+}
+.studio-preview{
+  position:relative;
+  aspect-ratio:3/4;
+  overflow:hidden;
+  border-radius:20px;
+  background:#111;
+}
+.studio-preview video{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  pointer-events:none;
+}
+.studio-countdown{
+  position:absolute;
+  inset:0;
+  display:grid;
+  place-items:center;
+  font-size:82px;
+  font-weight:700;
+  color:white;
+  background:rgba(0,0,0,.14);
+  text-shadow:0 6px 22px rgba(0,0,0,.35);
+}
+.studio-controls{
+  margin-top:10px;
+}
+.studio-segment{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+  padding:5px;
+  border-radius:16px;
+  background:rgba(255,255,255,.42);
+}
+.studio-choice{
+  border:0;
+  border-radius:12px;
+  min-height:38px;
+  background:transparent;
+  color:var(--ink);
+}
+.studio-choice.active{
+  background:white;
+}
+.studio-primary{
+  width:100%;
+  margin-top:8px;
+  min-height:46px;
+  border:0;
+  border-radius:16px;
+  background:var(--ink);
+  color:var(--bg);
+  font-weight:650;
+}
+.booth-result{
+  margin-top:14px;
+  padding:12px;
+  border-radius:24px;
+  background:var(--card);
+}
+.booth-result img{
+  width:100%;
+  max-height:68vh;
+  object-fit:contain;
+  border-radius:18px;
+  background:#eee;
+}
+.booth-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:10px;
+}
+.booth-actions button{
+  min-height:42px;
+  border:0;
+  border-radius:14px;
+  background:rgba(255,255,255,.62);
+  color:var(--ink);
+}
+.booth-actions button:last-child{
+  background:var(--ink);
+  color:var(--bg);
+}
